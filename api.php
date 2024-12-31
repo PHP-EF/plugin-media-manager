@@ -4,23 +4,25 @@
 // **
 
 $app->get('/api/plugin/plextvcleaner/settings', function($request, $response, $args) {
-    $api = new plextvcleaner_api();
-    return $response->withJson($api->settings());
+	$plextvcleaner = new plextvcleaner();
+	 if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
+        $plextvcleaner->api->setAPIResponseData($plextvcleaner->_pluginGetSettings());
+	}
+	$response->getBody()->write(jsonE($GLOBALS['api']));
+	return $response
+		->withHeader('Content-Type', 'application/json;charset=UTF-8')
+		->withStatus($GLOBALS['responseCode']);
 });
 
-$app->post('/api/plugin/plextvcleaner/settings', function($request, $response, $args) {
-    $api = new plextvcleaner_api();
-    return $response->withJson($api->settings());
-});
+//To be updated
+// $app->get('/api/plugin/plextvcleaner/shows', function($request, $response, $args) {
+//     $api = new plextvcleaner();
+//     return $response->withJson($api->shows());
+// });
 
-$app->get('/api/plugin/plextvcleaner/shows', function($request, $response, $args) {
-    $api = new plextvcleaner_api();
-    return $response->withJson($api->shows());
-});
-
-$app->post('/api/plugin/plextvcleaner/cleanup/{showPath}', function($request, $response, $args) {
-    $api = new plextvcleaner_api();
-    $params = $request->getParsedBody();
-    $params['path'] = urldecode($args['showPath']);
-    return $response->withJson($api->cleanup($params));
-});
+// $app->post('/plugin/plextvcleaner/cleanup/{showPath}', function($request, $response, $args) {
+//     $api = new plextvcleaner();
+//     $params = $request->getParsedBody();
+//     $params['path'] = urldecode($args['showPath']);
+//     return $response->withJson($api->cleanup($params));
+// });
