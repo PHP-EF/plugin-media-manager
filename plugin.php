@@ -82,54 +82,49 @@ class plextvcleaner extends ib {
         );
     }
 
-    public function getTvShows() {
-        if (empty($this->rootFolder)) {
-            $this->api->setAPIResponse('Error', 'Root folder not configured');
+    public function cleanup($params = null) {
+        if (!isset($params['path'])) {
+            $this->api->setAPIResponse('Error', 'Show path is required');
             return false;
         }
 
-        if (!file_exists($this->rootFolder)) {
-            $this->api->setAPIResponse('Error', 'Root folder does not exist or is not accessible: ' . $this->rootFolder . '. Current permissions: ' . substr(sprintf('%o', fileperms($this->rootFolder)), -4));
-            return false;
-        }
-
-        try {
-            $shows = [];
-            if (!is_readable($this->rootFolder)) {
-                $this->api->setAPIResponse('Error', 'Root folder is not readable: ' . $this->rootFolder);
-                return false;
-            }
-
-            $dir = new DirectoryIterator($this->rootFolder);
-            foreach ($dir as $fileinfo) {
-                if ($fileinfo->isDir() && !$fileinfo->isDot()) {
-                    $showName = $fileinfo->getFilename();
-                    if (!in_array($showName, $this->excludeFolders)) {
-                        $shows[] = [
-                            'name' => $showName,
-                            'path' => $fileinfo->getPathname(),
-                            'episodeCount' => $this->countEpisodes($fileinfo->getPathname()),
-                            'size' => $this->getFolderSize($fileinfo->getPathname()),
-                            'lastWatched' => $this->getLastWatchedDate($showName)
-                        ];
-                    }
-                }
-            }
-            
-            if (empty($shows)) {
-                $this->api->setAPIResponse('Warning', 'No TV shows found in ' . $this->rootFolder);
-            } else {
-                $this->api->setAPIResponse('Success', 'Retrieved ' . count($shows) . ' TV shows successfully');
-            }
-            $this->api->setAPIResponseData($shows);
-            return true;
-        } catch (Exception $e) {
-            $this->api->setAPIResponse('Error', 'Failed to get TV shows: ' . $e->getMessage());
+        $dryRun = isset($params['dryRun']) ? filter_var($params['dryRun'], FILTER_VALIDATE_BOOLEAN) : null;
+        $results = $this->cleanupShow($params['path'], $dryRun);
+        if (isset($results)) {
+            $this->api->setAPIResponseData($results);
+            return $results;
+        } else {
+            $this->api->setAPIResponse('Error', 'Failed to clean up show');
             return false;
         }
     }
 
-    public function countEpisodes($path) {
+    public function getTvShows() {
+        if (!file_exists($this->rootFolder)) {
+            $this->api->setAPIResponse('Error', 'Root folder does not exist');
+            return false;
+        }
+        $shows = [];
+        $dir = new DirectoryIterator($this->rootFolder);
+        foreach ($dir as $fileinfo) {
+            if ($fileinfo->isDir() && !$fileinfo->isDot()) {
+                $showName = $fileinfo->getFilename();
+                if (!in_array($showName, $this->excludeFolders)) {
+                    $shows[] = [
+                        'name' => $showName,
+                        'path' => $fileinfo->getPathname(),
+                        'episodeCount' => $this->countEpisodes($fileinfo->getPathname()),
+                        'size' => $this->getFolderSize($fileinfo->getPathname()),
+                        'lastWatched' => $this->getLastWatchedDate($showName)
+                    ];
+                }
+            }
+        }
+        $this->api->setAPIResponseData($shows);
+        return $shows;
+    }
+
+    private function countEpisodes($path) {
         $count = 0;
         $dir = new RecursiveDirectoryIterator($path);
         $iterator = new RecursiveIteratorIterator($dir);
@@ -141,7 +136,7 @@ class plextvcleaner extends ib {
         return $count;
     }
 
-    public function getFolderSize($path) {
+    private function getFolderSize($path) {
         $size = 0;
         $dir = new RecursiveDirectoryIterator($path);
         $iterator = new RecursiveIteratorIterator($dir);
@@ -237,3 +232,5 @@ class plextvcleaner extends ib {
         return true;
     }
 }
+
+
