@@ -64,7 +64,7 @@ class plextvcleaner extends ib {
                 $this->settingsOption('select-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'options' => $excludeFolders])
             ),
             'Tautulli Settings' => array(
-                $this->settingsOption('input', 'Tautulli API URL', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port/api/v2', 'value' => $this->tautulliApi]),
+                $this->settingsOption('url', 'Tautulli API URL', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port/api/v2', 'value' => $this->tautulliApi]),
                 $this->settingsOption('input', 'Tautulli API Key', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key', 'value' => $this->tautulliApiKey]),
                 $this->settingsOption('input', 'Tautulli Months', ['label' => 'Months to Look Back', 'placeholder' => '12', 'value' => $this->tautulliMonths])
             ),
