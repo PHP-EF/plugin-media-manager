@@ -11,24 +11,10 @@ $tautulliMonths = $settings['Tautulli Settings'][2]['value'] ?? 12;
 $episodesToKeep = $settings['Cleanup Settings'][0]['value'] ?? 3;
 $reportOnly = $settings['Cleanup Settings'][1]['value'] ?? 'true';
 $promptForFolderDeletion = $settings['Cleanup Settings'][2]['value'] ?? 'true';
-?><?php
-$plextvcleaner = new plextvcleaner();
-$pluginConfig = $plextvcleaner->config->get('Plugins','Plex TV Cleaner');
-if ($plextvcleaner->auth->checkAccess($pluginConfig['ACL-PLEXTVCLEANER'] ?? null) == false) {
-    die();
-}
-
-// Get settings from the plugin instance
-$settings = $plextvcleaner->_pluginGetSettings();
-$tautulliMonths = $settings['Tautulli Settings'][2]['value'] ?? 12;
-$episodesToKeep = $settings['Cleanup Settings'][0]['value'] ?? 3;
-$reportOnly = $settings['Cleanup Settings'][1]['value'] ?? 'true';
-$promptForFolderDeletion = $settings['Cleanup Settings'][2]['value'] ?? 'true';
 ?>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <!-- TV Shows Card -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">TV Shows Cleanup Status</h3>
@@ -128,125 +114,6 @@ $promptForFolderDeletion = $settings['Cleanup Settings'][2]['value'] ?? 'true';
                                 <!-- Activity logs will be inserted here -->
                             </tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Cleanup Confirmation Modal -->
-<div class="modal fade" id="cleanupModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Cleanup</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="cleanupDetails">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmCleanup()">Confirm Cleanup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-let currentCleanupPath = null;
-let plextvcleaner = {
-    tautulliMonths: <?php echo intval($tautulliMonths); ?>,
-    episodesToKeep: <?php echo intval($episodesToKeep); ?>,
-    reportOnly: <?php echo $reportOnly; ?>,
-    promptForFolderDeletion: <?php echo $promptForFolderDeletion; ?>
-};
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    refreshTVShows();
-});
-
-{{ ... rest of the JavaScript code ... }}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">TV Shows Cleanup Status</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-primary btn-sm" onclick="refreshTVShows()">
-                            <i class="fas fa-sync"></i> Refresh
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Stats cards -->
-                    <div class="row mb-3">
-                        <div class="col-md-3">
-                            <div class="info-box bg-info">
-                                <span class="info-box-icon"><i class="fas fa-tv"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Total Shows</span>
-                                    <span class="info-box-number" id="totalShows">0</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-box bg-success">
-                                <span class="info-box-icon"><i class="fas fa-check"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Recently Watched</span>
-                                    <span class="info-box-number" id="recentlyWatched">0</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-box bg-warning">
-                                <span class="info-box-icon"><i class="fas fa-clock"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Cleanup Pending</span>
-                                    <span class="info-box-number" id="cleanupPending">0</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-box bg-danger">
-                                <span class="info-box-icon"><i class="fas fa-trash"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Space to Free</span>
-                                    <span class="info-box-number" id="spaceToFree">0 GB</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- TV Shows List -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">TV Shows</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Show Name</th>
-                                            <th>Episodes</th>
-                                            <th>Size</th>
-                                            <th>Last Watched</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="showsList">
-                                        <!-- Shows will be inserted here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -501,3 +368,4 @@ function addToActivityLog(activity) {
     `;
     tbody.insertBefore(row, tbody.firstChild);
 }
+</script>
