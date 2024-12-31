@@ -46,7 +46,7 @@ class plextvcleaner extends ib {
         $excludeFolders = [];
         if (!empty($this->excludeFolders)) {
             foreach ($this->excludeFolders as $folder) {
-                $excludeFolders[] = ['name' => $folder, 'value' => $folder];
+                $excludeFolders[] = $folder;
             }
         }
 
@@ -61,7 +61,7 @@ class plextvcleaner extends ib {
             ),
             'TV Show Settings' => array(
                 $this->settingsOption('input', 'Root Folder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV', 'value' => $this->rootFolder]),
-                $this->settingsOption('select-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'options' => $excludeFolders])
+                $this->settingsOption('input-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders])
             ),
             'Tautulli Settings' => array(
                 $this->settingsOption('url', 'Tautulli API URL', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port/api/v2', 'value' => $this->tautulliApi]),
