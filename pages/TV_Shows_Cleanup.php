@@ -187,7 +187,7 @@ function updateStats() {
 }
 
 function refreshTVShows() {
-    queryAPI("GET","/api/plugin/plextvcleaner/shows").done(function(data) {
+    queryAPI("GET","/plugin/plextvcleaner/shows").done(function(data) {
         if (data["result"] == "Success") {
             localStorage.setItem('tvShows', JSON.stringify(data.data));
             updateShowsList(data.data);
@@ -234,26 +234,29 @@ function updateShowsList(shows) {
 }
 
 function analyzeShow(path) {
-    fetch(`/api/plugin/plextvcleaner/cleanup/${encodeURIComponent(path)}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ dryRun: true })
-    })
-    .then(response => response.json())
-    .then(result => {
-        const show = JSON.parse(localStorage.getItem('tvShows'))
-            .find(s => s.path === path);
-        
-        addToActivityLog({
-            timestamp: Math.floor(Date.now() / 1000),
-            showName: show.name,
-            action: 'Analyze',
-            details: `${result.filesToDelete.length} files (${formatSize(result.totalSize)})`,
-            status: 'success'
+    const show = JSON.parse(localStorage.getItem('tvShows'))
+        .find(s => s.path === path);
+
+    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(path), { dryRun: true })
+        .done(function(data) {
+            if (data["result"] == "Success") {
+                const results = data.data;
+                addToActivityLog({
+                    timestamp: Math.floor(Date.now() / 1000),
+                    showName: show.name,
+                    action: 'Analyze',
+                    details: `${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
+                    status: 'success'
+                });
+            } else if (data["result"] == "Error") {
+                toast(data["result"], "", data["message"], "danger");
+            } else {
+                toast("API Error", "", "Failed to analyze show", "danger", "30000");
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            toast(textStatus, "", "Failed to analyze show", "danger", "30000");
         });
-    });
 }
 
 function showCleanupModal(path) {
@@ -261,67 +264,68 @@ function showCleanupModal(path) {
     const show = JSON.parse(localStorage.getItem('tvShows'))
         .find(s => s.path === path);
 
-    fetch(`/api/plugin/plextvcleaner/cleanup/${encodeURIComponent(path)}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ dryRun: true })
-    })
-    .then(response => response.json())
-    .then(result => {
-        document.getElementById('cleanupDetails').innerHTML = `
-            <h6>Show: ${show.name}</h6>
-            <p>The following cleanup will be performed:</p>
-            <ul>
-                <li>Files to delete: ${result.filesToDelete.length}</li>
-                <li>Space to free: ${formatSize(result.totalSize)}</li>
-            </ul>
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                This action cannot be undone. Please confirm to proceed.
-            </div>
-        `;
-        $('#cleanupModal').modal('show');
-    });
+    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(path), { dryRun: true })
+        .done(function(data) {
+            if (data["result"] == "Success") {
+                const results = data.data;
+                document.getElementById('cleanupDetails').innerHTML = `
+                    <h6>Show: ${show.name}</h6>
+                    <p>The following cleanup will be performed:</p>
+                    <ul>
+                        <li>Files to delete: ${results.filesToDelete.length}</li>
+                        <li>Space to free: ${formatSize(results.totalSize)}</li>
+                    </ul>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        This action cannot be undone. Please confirm to proceed.
+                    </div>
+                `;
+                $('#cleanupModal').modal('show');
+            } else if (data["result"] == "Error") {
+                toast(data["result"], "", data["message"], "danger");
+            } else {
+                toast("API Error", "", "Failed to analyze show", "danger", "30000");
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            toast(textStatus, "", "Failed to analyze show", "danger", "30000");
+        });
 }
 
 function confirmCleanup() {
-    if (!currentCleanupPath) return;
-
     const show = JSON.parse(localStorage.getItem('tvShows'))
         .find(s => s.path === currentCleanupPath);
 
-    fetch(`/api/plugin/plextvcleaner/cleanup/${encodeURIComponent(currentCleanupPath)}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ dryRun: false })
-    })
-    .then(response => response.json())
-    .then(result => {
-        $('#cleanupModal').modal('hide');
-        
-        addToActivityLog({
-            timestamp: Math.floor(Date.now() / 1000),
-            showName: show.name,
-            action: 'Cleanup',
-            details: `Deleted ${result.filesToDelete.length} files (${formatSize(result.totalSize)})`,
-            status: 'success'
-        });
+    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(currentCleanupPath), { dryRun: false })
+        .done(function(data) {
+            if (data["result"] == "Success") {
+                const results = data.data;
+                $('#cleanupModal').modal('hide');
+                
+                addToActivityLog({
+                    timestamp: Math.floor(Date.now() / 1000),
+                    showName: show.name,
+                    action: 'Cleanup',
+                    details: `Deleted ${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
+                    status: 'success'
+                });
 
-        refreshTVShows();
-    })
-    .catch(error => {
-        addToActivityLog({
-            timestamp: Math.floor(Date.now() / 1000),
-            showName: show.name,
-            action: 'Cleanup',
-            details: `Error: ${error.message}`,
-            status: 'error'
+                refreshTVShows();
+            } else if (data["result"] == "Error") {
+                toast(data["result"], "", data["message"], "danger");
+            } else {
+                toast("API Error", "", "Failed to clean up show", "danger", "30000");
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            addToActivityLog({
+                timestamp: Math.floor(Date.now() / 1000),
+                showName: show.name,
+                action: 'Cleanup',
+                details: `Error: ${errorThrown}`,
+                status: 'error'
+            });
         });
-    });
 }
 
 // Initial load
