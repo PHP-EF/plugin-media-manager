@@ -1,3 +1,17 @@
+<?php
+$plextvcleaner = new plextvcleaner();
+$pluginConfig = $plextvcleaner->config->get('Plugins','Plex TV Cleaner');
+if ($plextvcleaner->auth->checkAccess($pluginConfig['ACL-PLEXTVCLEANER'] ?? null) == false) {
+    die();
+}
+
+// Get settings from the plugin instance
+$settings = $plextvcleaner->_pluginGetSettings();
+$tautulliMonths = $settings['Tautulli Settings'][2]['value'] ?? 12;
+$episodesToKeep = $settings['Cleanup Settings'][0]['value'] ?? 3;
+$reportOnly = $settings['Cleanup Settings'][1]['value'] ?? 'true';
+$promptForFolderDeletion = $settings['Cleanup Settings'][2]['value'] ?? 'true';
+?>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -11,6 +25,7 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Stats cards -->
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <div class="info-box bg-info">
@@ -50,31 +65,6 @@
                         </div>
                     </div>
 
-                    <!-- Activity Log -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Activity Log</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover" id="activityTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>Show Name</th>
-                                            <th>Action</th>
-                                            <th>Details</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="activityLog">
-                                        <!-- Activity logs will be inserted here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- TV Shows List -->
                     <div class="card">
                         <div class="card-header">
@@ -82,7 +72,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-hover" id="showsTable">
+                                <table class="table table-hover">
                                     <thead>
                                         <tr>
                                             <th>Show Name</th>
@@ -94,11 +84,36 @@
                                         </tr>
                                     </thead>
                                     <tbody id="showsList">
-                                        <!-- TV shows will be inserted here -->
+                                        <!-- Shows will be inserted here -->
                                     </tbody>
                                 </table>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="card-title">Activity Log</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Show Name</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityLog">
+                                <!-- Activity logs will be inserted here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -108,7 +123,7 @@
 
 <!-- Cleanup Confirmation Modal -->
 <div class="modal fade" id="cleanupModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirm Cleanup</h5>
@@ -116,10 +131,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div id="cleanupDetails">
-                    <!-- Cleanup details will be inserted here -->
-                </div>
+            <div class="modal-body" id="cleanupDetails">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -130,216 +142,11 @@
 </div>
 
 <script>
-let currentCleanupPath = null;
-let activityLog = [];
-
-function formatSize(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function formatDate(timestamp) {
-    if (!timestamp) return 'Never';
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleString();
-}
-
-function addToActivityLog(activity) {
-    activityLog.unshift(activity);
-    updateActivityLog();
-    updateStats();
-}
-
-function updateActivityLog() {
-    const tbody = document.getElementById('activityLog');
-    tbody.innerHTML = activityLog.map(activity => `
-        <tr>
-            <td>${formatDate(activity.timestamp)}</td>
-            <td>${activity.showName}</td>
-            <td>${activity.action}</td>
-            <td>${activity.details}</td>
-            <td>
-                <span class="badge badge-${activity.status === 'success' ? 'success' : 'danger'}">
-                    ${activity.status}
-                </span>
-            </td>
-        </tr>
-    `).join('');
-}
-
-function updateStats() {
-    const shows = JSON.parse(localStorage.getItem('tvShows') || '[]');
-    const recentCutoff = Math.floor(Date.now() / 1000) - (plextvcleaner.tautulliMonths * 30 * 24 * 60 * 60);
-    
-    document.getElementById('totalShows').textContent = shows.length;
-    document.getElementById('recentlyWatched').textContent = shows.filter(show => 
-        show.lastWatched && show.lastWatched > recentCutoff
-    ).length;
-    document.getElementById('cleanupPending').textContent = shows.filter(show => 
-        !show.lastWatched || show.lastWatched <= recentCutoff
-    ).length;
-
-    const totalSpace = shows.reduce((acc, show) => acc + show.size, 0);
-    document.getElementById('spaceToFree').textContent = formatSize(totalSpace);
-}
-
-function refreshTVShows() {
-    queryAPI("GET","/api/plugin/plextvcleaner/shows").done(function(data) {
-        if (data["result"] == "Success") {
-            localStorage.setItem('tvShows', JSON.stringify(data.data));
-            updateShowsList(data.data);
-            updateStats();
-        } else if (data["result"] == "Error") {
-            toast(data["result"],"",data["message"],"danger");
-        } else {
-            toast("API Error","","Failed to get TV Shows","danger","30000");
-        }
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-        toast(textStatus,"","Failed to get TV Shows","danger","30000");
-    })
-}
-
-function updateShowsList(shows) {
-    const tbody = document.getElementById('showsList');
-    tbody.innerHTML = shows.map(show => {
-        const lastWatched = formatDate(show.lastWatched);
-        const isRecent = show.lastWatched && 
-            show.lastWatched > Math.floor(Date.now() / 1000) - (plextvcleaner.tautulliMonths * 30 * 24 * 60 * 60);
-
-        return `
-            <tr>
-                <td>${show.name}</td>
-                <td>${show.episodeCount}</td>
-                <td>${formatSize(show.size)}</td>
-                <td>${lastWatched}</td>
-                <td>
-                    <span class="badge badge-${isRecent ? 'success' : 'warning'}">
-                        ${isRecent ? 'Recent' : 'Cleanup Pending'}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-info" onclick="analyzeShow('${show.name}', '${show.path}')">
-                        Analyze
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="showCleanupModal('${show.path}')">
-                        Cleanup
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function analyzeShow(showName, showPath) {
-    queryAPI("POST", `/api/plugin/plextvcleaner/cleanup/${encodeURIComponent(showPath)}`, { dryRun: true })
-        .done(function(data) {
-            if (data["result"] == "Success") {
-                const results = data.data;
-                let message = `<p>The following files will be deleted:</p><ul>`;
-                results.filesToDelete.forEach(file => {
-                    message += `<li>${file}</li>`;
-                });
-                message += `</ul><p>Total space to be freed: ${formatSize(results.totalSize)}</p>`;
-                document.getElementById('cleanupDetails').innerHTML = message;
-                
-                addToActivityLog({
-                    timestamp: Math.floor(Date.now() / 1000),
-                    showName: showName,
-                    action: 'Analyze',
-                    details: `${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
-                    status: 'success'
-                });
-            } else if (data["result"] == "Error") {
-                toast(data["result"], "", data["message"], "danger");
-            } else {
-                toast("API Error", "", "Failed to analyze show", "danger", "30000");
-            }
-        })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            toast(textStatus, "", "Failed to analyze show", "danger", "30000");
-        });
-}
-
-function showCleanupModal(path) {
-    currentCleanupPath = path;
-    const show = JSON.parse(localStorage.getItem('tvShows'))
-        .find(s => s.path === path);
-
-    queryAPI("POST", `/api/plugin/plextvcleaner/cleanup/${encodeURIComponent(path)}`, { dryRun: true })
-        .done(function(data) {
-            if (data["result"] == "Success") {
-                const results = data.data;
-                let message = `<h6>Show: ${show.name}</h6>
-                    <p>The following cleanup will be performed:</p>
-                    <ul>
-                        <li>Files to delete: ${results.filesToDelete.length}</li>
-                        <li>Space to free: ${formatSize(results.totalSize)}</li>
-                    </ul>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        This action cannot be undone. Please confirm to proceed.
-                    </div>`;
-                document.getElementById('cleanupDetails').innerHTML = message;
-                $('#cleanupModal').modal('show');
-            } else if (data["result"] == "Error") {
-                toast(data["result"], "", data["message"], "danger");
-            } else {
-                toast("API Error", "", "Failed to analyze show", "danger", "30000");
-            }
-        })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            toast(textStatus, "", "Failed to analyze show", "danger", "30000");
-        });
-}
-
-function confirmCleanup() {
-    if (!currentCleanupPath) return;
-
-    const show = JSON.parse(localStorage.getItem('tvShows'))
-        .find(s => s.path === currentCleanupPath);
-
-    queryAPI("POST", `/api/plugin/plextvcleaner/cleanup/${encodeURIComponent(currentCleanupPath)}`, { dryRun: false })
-        .done(function(data) {
-            if (data["result"] == "Success") {
-                const results = data.data;
-                let message = `<p>The following files were deleted:</p><ul>`;
-                results.filesToDelete.forEach(file => {
-                    message += `<li>${file}</li>`;
-                });
-                message += `</ul><p>Total space freed: ${formatSize(results.totalSize)}</p>`;
-                document.getElementById('cleanupDetails').innerHTML = message;
-                
-                addToActivityLog({
-                    timestamp: Math.floor(Date.now() / 1000),
-                    showName: show.name,
-                    action: 'Cleanup',
-                    details: `Deleted ${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
-                    status: 'success'
-                });
-
-                refreshTVShows();
-            } else if (data["result"] == "Error") {
-                toast(data["result"], "", data["message"], "danger");
-            } else {
-                toast("API Error", "", "Failed to clean up show", "danger", "30000");
-            }
-        })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            addToActivityLog({
-                timestamp: Math.floor(Date.now() / 1000),
-                showName: show.name,
-                action: 'Cleanup',
-                details: `Error: ${errorThrown}`,
-                status: 'error'
-            });
-        });
-}
-
-// Initial load
-document.addEventListener('DOMContentLoaded', function() {
-    refreshTVShows();
-});
+// Pass PHP settings to JavaScript
+let plextvcleaner = {
+    tautulliMonths: <?php echo intval($tautulliMonths); ?>,
+    episodesToKeep: <?php echo intval($episodesToKeep); ?>,
+    reportOnly: <?php echo $reportOnly; ?>,
+    promptForFolderDeletion: <?php echo $promptForFolderDeletion; ?>
+};
 </script>
