@@ -82,25 +82,6 @@ class plextvcleaner extends ib {
         );
     }
 
-    public function getTvShows() {
-        $tvShowsData = $this->retrieveTvShowsData(); // Replace with actual data retrieval logic
-
-        // Write data to JSON file
-        $this->writeToJsonFile($tvShowsData);
-    }
-
-    private function retrieveTvShowsData() {
-        // TO DO: implement actual data retrieval logic
-        // For now, return a dummy array
-        return array('tvShows' => array('show1', 'show2', 'show3'));
-    }
-
-    private function writeToJsonFile($data) {
-        $jsonFile = 'tvshows.json';
-        $jsonData = json_encode($data, JSON_PRETTY_PRINT);
-        file_put_contents($jsonFile, $jsonData);
-    }
-
     public function cleanup($params = null) {
         if (!isset($params['path'])) {
             $this->api->setAPIResponse('Error', 'Show path is required');
