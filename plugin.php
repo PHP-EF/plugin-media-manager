@@ -84,11 +84,19 @@ class plextvcleaner extends ib {
 
     public function cleanup($params = null) {
         if (!isset($params['path'])) {
-            return ['error' => 'Show path is required'];
+            $this->api->setAPIResponse('Error', 'Show path is required');
+            return false;
         }
 
         $dryRun = isset($params['dryRun']) ? filter_var($params['dryRun'], FILTER_VALIDATE_BOOLEAN) : null;
-        return $this->cleanupShow($params['path'], $dryRun);
+        $results = $this->cleanupShow($params['path'], $dryRun);
+        if (isset($results)) {
+            $this->api->setAPIResponseData($results);
+            return $results;
+        } else {
+            $this->api->setAPIResponse('Error', 'Failed to clean up show');
+            return false;
+        }
     }
 
     public function getTvShows() {
