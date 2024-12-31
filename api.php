@@ -3,7 +3,7 @@
 // USED TO DEFINE API ENDPOINTS
 // **
 
-class plextvcleaner_api extends api {
+class plextvcleaner_api extends API {
     public function settings($params = null) {
         $plugin = new plextvcleaner();
         

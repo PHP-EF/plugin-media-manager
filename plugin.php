@@ -214,3 +214,25 @@ class plextvcleaner extends ib {
         return true;
     }
 }
+
+class plextvcleaner_api extends API {
+    public function settings($params = null) {
+        $plugin = new plextvcleaner();
+        return $plugin->_pluginGetSettings();
+    }
+
+    public function shows() {
+        $plugin = new plextvcleaner();
+        return $plugin->getTvShows();
+    }
+
+    public function cleanup($params = null) {
+        if (!isset($params['path'])) {
+            return ['error' => 'Show path is required'];
+        }
+
+        $plugin = new plextvcleaner();
+        $dryRun = isset($params['dryRun']) ? filter_var($params['dryRun'], FILTER_VALIDATE_BOOLEAN) : null;
+        return $plugin->cleanupShow($params['path'], $dryRun);
+    }
+}
