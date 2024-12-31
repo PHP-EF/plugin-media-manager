@@ -3,7 +3,7 @@
 // USED TO DEFINE API ENDPOINTS
 // **
 
-$app->get('/api/plugin/plextvcleaner/settings', function($request, $response, $args) {
+$app->get('/plugin/plextvcleaner/settings', function($request, $response, $args) {
 	$plextvcleaner = new plextvcleaner();
 	 if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
         $plextvcleaner->api->setAPIResponseData($plextvcleaner->_pluginGetSettings());
