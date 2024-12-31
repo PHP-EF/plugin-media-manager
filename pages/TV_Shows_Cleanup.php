@@ -128,6 +128,9 @@
 
 <script>
 let currentCleanupPath = null;
+let plextvcleaner = {
+    tautulliMonths: <?php echo $this->tautulliMonths ?? 12; ?>
+};
 
 function refreshTVShows() {
     queryAPI("GET", "/plugin/plextvcleaner/shows")
@@ -197,7 +200,111 @@ function updateShowsList(shows) {
     }).join('');
 }
 
+function analyzeShow(path) {
+    const show = JSON.parse(localStorage.getItem('tvShows'))
+        .find(s => s.path === path);
+
+    if (!show) {
+        toast("Error", "", "Show not found", "danger", "30000");
+        return;
+    }
+
+    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(path), { dryRun: true })
+        .done(function(data) {
+            if (data["result"] == "Success") {
+                const results = data.data;
+                addToActivityLog({
+                    timestamp: Math.floor(Date.now() / 1000),
+                    showName: show.name,
+                    action: 'Analyze',
+                    details: `${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
+                    status: 'success'
+                });
+            } else {
+                toast("Error", "", data["message"] || "Failed to analyze show", "danger", "30000");
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            toast("Error", "", "Failed to analyze show: " + textStatus, "danger", "30000");
+        });
+}
+
+function showCleanupModal(path) {
+    currentCleanupPath = path;
+    const show = JSON.parse(localStorage.getItem('tvShows'))
+        .find(s => s.path === path);
+
+    if (!show) {
+        toast("Error", "", "Show not found", "danger", "30000");
+        return;
+    }
+
+    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(path), { dryRun: true })
+        .done(function(data) {
+            if (data["result"] == "Success") {
+                const results = data.data;
+                document.getElementById('cleanupDetails').innerHTML = `
+                    <h6>Show: ${escapeHtml(show.name)}</h6>
+                    <p>The following cleanup will be performed:</p>
+                    <ul>
+                        <li>Files to delete: ${results.filesToDelete.length}</li>
+                        <li>Space to free: ${formatSize(results.totalSize)}</li>
+                    </ul>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        This action cannot be undone. Please confirm to proceed.
+                    </div>
+                `;
+                $('#cleanupModal').modal('show');
+            } else {
+                toast("Error", "", data["message"] || "Failed to analyze show", "danger", "30000");
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            toast("Error", "", "Failed to analyze show: " + textStatus, "danger", "30000");
+        });
+}
+
+function confirmCleanup() {
+    if (!currentCleanupPath) {
+        toast("Error", "", "No show selected for cleanup", "danger", "30000");
+        return;
+    }
+
+    const show = JSON.parse(localStorage.getItem('tvShows'))
+        .find(s => s.path === currentCleanupPath);
+
+    if (!show) {
+        toast("Error", "", "Show not found", "danger", "30000");
+        return;
+    }
+
+    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(currentCleanupPath), { dryRun: false })
+        .done(function(data) {
+            if (data["result"] == "Success") {
+                const results = data.data;
+                $('#cleanupModal').modal('hide');
+                
+                addToActivityLog({
+                    timestamp: Math.floor(Date.now() / 1000),
+                    showName: show.name,
+                    action: 'Cleanup',
+                    details: `Deleted ${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
+                    status: 'success'
+                });
+
+                refreshTVShows();
+            } else {
+                toast("Error", "", data["message"] || "Failed to clean up show", "danger", "30000");
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            toast("Error", "", "Failed to clean up show: " + textStatus, "danger", "30000");
+        });
+}
+
 function escapeHtml(unsafe) {
+    if (!unsafe) return '';
     return unsafe
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -213,11 +320,30 @@ function formatDate(timestamp) {
 }
 
 function formatSize(bytes) {
-    if (bytes === 0) return '0 B';
+    if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function addToActivityLog(activity) {
+    const tbody = document.getElementById('activityLog');
+    if (!tbody) return;
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${formatDate(activity.timestamp)}</td>
+        <td>${escapeHtml(activity.showName)}</td>
+        <td>${escapeHtml(activity.action)}</td>
+        <td>${escapeHtml(activity.details)}</td>
+        <td>
+            <span class="badge badge-${activity.status === 'success' ? 'success' : 'danger'}">
+                ${activity.status}
+            </span>
+        </td>
+    `;
+    tbody.insertBefore(row, tbody.firstChild);
 }
 
 // Initialize on page load
