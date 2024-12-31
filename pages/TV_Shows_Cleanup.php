@@ -187,13 +187,19 @@ function updateStats() {
 }
 
 function refreshTVShows() {
-    fetch('/api/plugin/plextvcleaner/shows')
-        .then(response => response.json())
-        .then(shows => {
-            localStorage.setItem('tvShows', JSON.stringify(shows));
-            updateShowsList(shows);
+    queryAPI("GET","/api/plugin/plextvcleaner/shows").done(function(data) {
+        if (data["result"] == "Success") {
+            localStorage.setItem('tvShows', JSON.stringify(data.data));
+            updateShowsList(data.data);
             updateStats();
-        });
+        } else if (data["result"] == "Error") {
+            toast(data["result"],"",data["message"],"danger");
+        } else {
+            toast("API Error","","Failed to get TV Shows","danger","30000");
+        }
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        toast(textStatus,"","Failed to get TV Shows","danger","30000");
+    })
 }
 
 function updateShowsList(shows) {
