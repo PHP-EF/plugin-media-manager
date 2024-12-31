@@ -50,31 +50,6 @@
                         </div>
                     </div>
 
-                    <!-- Activity Log -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Activity Log</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover" id="activityTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>Show Name</th>
-                                            <th>Action</th>
-                                            <th>Details</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="activityLog">
-                                        <!-- Activity logs will be inserted here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- TV Shows List -->
                     <div class="card">
                         <div class="card-header">
@@ -82,7 +57,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-hover" id="showsTable">
+                                <table class="table table-hover">
                                     <thead>
                                         <tr>
                                             <th>Show Name</th>
@@ -94,7 +69,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="showsList">
-                                        <!-- TV shows will be inserted here -->
+                                        <!-- Shows will be inserted here -->
                                     </tbody>
                                 </table>
                             </div>
@@ -108,7 +83,7 @@
 
 <!-- Cleanup Confirmation Modal -->
 <div class="modal fade" id="cleanupModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirm Cleanup</h5>
@@ -116,10 +91,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div id="cleanupDetails">
-                    <!-- Cleanup details will be inserted here -->
-                </div>
+            <div class="modal-body" id="cleanupDetails">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -129,9 +101,116 @@
     </div>
 </div>
 
+<!-- Activity Log -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Activity Log</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="activityTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Show Name</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="activityLog">
+                    <!-- Activity logs will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script>
 let currentCleanupPath = null;
-let activityLog = [];
+
+function refreshTVShows() {
+    queryAPI("GET", "/plugin/plextvcleaner/shows")
+        .done(function(data) {
+            if (data["result"] == "Success") {
+                const shows = data.data || [];
+                localStorage.setItem('tvShows', JSON.stringify(shows));
+                updateShowsList(shows);
+                updateStats(shows);
+            } else {
+                toast("Error", "", data["message"] || "Failed to get TV shows", "danger", "30000");
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            toast("Error", "", "Failed to get TV shows: " + textStatus, "danger", "30000");
+        });
+}
+
+function updateStats(shows) {
+    const totalShows = shows.length;
+    const recentlyWatched = shows.filter(show => 
+        show.lastWatched && 
+        show.lastWatched > Math.floor(Date.now() / 1000) - (plextvcleaner.tautulliMonths * 30 * 24 * 60 * 60)
+    ).length;
+    const cleanupPending = totalShows - recentlyWatched;
+    const spaceToFree = shows.reduce((total, show) => total + (show.size || 0), 0);
+
+    document.getElementById('totalShows').textContent = totalShows;
+    document.getElementById('recentlyWatched').textContent = recentlyWatched;
+    document.getElementById('cleanupPending').textContent = cleanupPending;
+    document.getElementById('spaceToFree').textContent = formatSize(spaceToFree);
+}
+
+function updateShowsList(shows) {
+    const tbody = document.getElementById('showsList');
+    if (!tbody) {
+        console.error('Shows list table body not found');
+        return;
+    }
+
+    tbody.innerHTML = shows.map(show => {
+        const lastWatched = formatDate(show.lastWatched);
+        const isRecent = show.lastWatched && 
+            show.lastWatched > Math.floor(Date.now() / 1000) - (plextvcleaner.tautulliMonths * 30 * 24 * 60 * 60);
+
+        return `
+            <tr>
+                <td>${escapeHtml(show.name)}</td>
+                <td>${show.episodeCount || 0}</td>
+                <td>${formatSize(show.size || 0)}</td>
+                <td>${lastWatched || 'Never'}</td>
+                <td>
+                    <span class="badge badge-${isRecent ? 'success' : 'warning'}">
+                        ${isRecent ? 'Recent' : 'Cleanup Pending'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="analyzeShow('${escapeHtml(show.path)}')">
+                        <i class="fas fa-search"></i> Analyze
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="showCleanupModal('${escapeHtml(show.path)}')">
+                        <i class="fas fa-trash"></i> Cleanup
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function formatDate(timestamp) {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
 
 function formatSize(bytes) {
     if (bytes === 0) return '0 B';
@@ -141,194 +220,7 @@ function formatSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function formatDate(timestamp) {
-    if (!timestamp) return 'Never';
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleString();
-}
-
-function addToActivityLog(activity) {
-    activityLog.unshift(activity);
-    updateActivityLog();
-    updateStats();
-}
-
-function updateActivityLog() {
-    const tbody = document.getElementById('activityLog');
-    tbody.innerHTML = activityLog.map(activity => `
-        <tr>
-            <td>${formatDate(activity.timestamp)}</td>
-            <td>${activity.showName}</td>
-            <td>${activity.action}</td>
-            <td>${activity.details}</td>
-            <td>
-                <span class="badge badge-${activity.status === 'success' ? 'success' : 'danger'}">
-                    ${activity.status}
-                </span>
-            </td>
-        </tr>
-    `).join('');
-}
-
-function updateStats() {
-    const shows = JSON.parse(localStorage.getItem('tvShows') || '[]');
-    const recentCutoff = Math.floor(Date.now() / 1000) - (plextvcleaner.tautulliMonths * 30 * 24 * 60 * 60);
-    
-    document.getElementById('totalShows').textContent = shows.length;
-    document.getElementById('recentlyWatched').textContent = shows.filter(show => 
-        show.lastWatched && show.lastWatched > recentCutoff
-    ).length;
-    document.getElementById('cleanupPending').textContent = shows.filter(show => 
-        !show.lastWatched || show.lastWatched <= recentCutoff
-    ).length;
-
-    const totalSpace = shows.reduce((acc, show) => acc + show.size, 0);
-    document.getElementById('spaceToFree').textContent = formatSize(totalSpace);
-}
-
-function refreshTVShows() {
-    queryAPI("GET","/plugin/plextvcleaner/shows").done(function(data) {
-        if (data["result"] == "Success") {
-            localStorage.setItem('tvShows', JSON.stringify(data.data));
-            updateShowsList(data.data);
-            updateStats();
-        } else if (data["result"] == "Error") {
-            toast(data["result"],"",data["message"],"danger");
-        } else {
-            toast("API Error","","Failed to get TV Shows","danger","30000");
-        }
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-        toast(textStatus,"","Failed to get TV Shows","danger","30000");
-    })
-}
-
-function updateShowsList(shows) {
-    const tbody = document.getElementById('showsList');
-    tbody.innerHTML = shows.map(show => {
-        const lastWatched = formatDate(show.lastWatched);
-        const isRecent = show.lastWatched && 
-            show.lastWatched > Math.floor(Date.now() / 1000) - (plextvcleaner.tautulliMonths * 30 * 24 * 60 * 60);
-
-        return `
-            <tr>
-                <td>${show.name}</td>
-                <td>${show.episodeCount}</td>
-                <td>${formatSize(show.size)}</td>
-                <td>${lastWatched}</td>
-                <td>
-                    <span class="badge badge-${isRecent ? 'success' : 'warning'}">
-                        ${isRecent ? 'Recent' : 'Cleanup Pending'}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-info" onclick="analyzeShow('${show.path}')">
-                        Analyze
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="showCleanupModal('${show.path}')">
-                        Cleanup
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function analyzeShow(path) {
-    const show = JSON.parse(localStorage.getItem('tvShows'))
-        .find(s => s.path === path);
-
-    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(path), { dryRun: true })
-        .done(function(data) {
-            if (data["result"] == "Success") {
-                const results = data.data;
-                addToActivityLog({
-                    timestamp: Math.floor(Date.now() / 1000),
-                    showName: show.name,
-                    action: 'Analyze',
-                    details: `${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
-                    status: 'success'
-                });
-            } else if (data["result"] == "Error") {
-                toast(data["result"], "", data["message"], "danger");
-            } else {
-                toast("API Error", "", "Failed to analyze show", "danger", "30000");
-            }
-        })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            toast(textStatus, "", "Failed to analyze show", "danger", "30000");
-        });
-}
-
-function showCleanupModal(path) {
-    currentCleanupPath = path;
-    const show = JSON.parse(localStorage.getItem('tvShows'))
-        .find(s => s.path === path);
-
-    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(path), { dryRun: true })
-        .done(function(data) {
-            if (data["result"] == "Success") {
-                const results = data.data;
-                document.getElementById('cleanupDetails').innerHTML = `
-                    <h6>Show: ${show.name}</h6>
-                    <p>The following cleanup will be performed:</p>
-                    <ul>
-                        <li>Files to delete: ${results.filesToDelete.length}</li>
-                        <li>Space to free: ${formatSize(results.totalSize)}</li>
-                    </ul>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        This action cannot be undone. Please confirm to proceed.
-                    </div>
-                `;
-                $('#cleanupModal').modal('show');
-            } else if (data["result"] == "Error") {
-                toast(data["result"], "", data["message"], "danger");
-            } else {
-                toast("API Error", "", "Failed to analyze show", "danger", "30000");
-            }
-        })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            toast(textStatus, "", "Failed to analyze show", "danger", "30000");
-        });
-}
-
-function confirmCleanup() {
-    const show = JSON.parse(localStorage.getItem('tvShows'))
-        .find(s => s.path === currentCleanupPath);
-
-    queryAPI("POST", "/plugin/plextvcleaner/cleanup/" + encodeURIComponent(currentCleanupPath), { dryRun: false })
-        .done(function(data) {
-            if (data["result"] == "Success") {
-                const results = data.data;
-                $('#cleanupModal').modal('hide');
-                
-                addToActivityLog({
-                    timestamp: Math.floor(Date.now() / 1000),
-                    showName: show.name,
-                    action: 'Cleanup',
-                    details: `Deleted ${results.filesToDelete.length} files (${formatSize(results.totalSize)})`,
-                    status: 'success'
-                });
-
-                refreshTVShows();
-            } else if (data["result"] == "Error") {
-                toast(data["result"], "", data["message"], "danger");
-            } else {
-                toast("API Error", "", "Failed to clean up show", "danger", "30000");
-            }
-        })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            addToActivityLog({
-                timestamp: Math.floor(Date.now() / 1000),
-                showName: show.name,
-                action: 'Cleanup',
-                details: `Error: ${errorThrown}`,
-                status: 'error'
-            });
-        });
-}
-
-// Initial load
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     refreshTVShows();
 });

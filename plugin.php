@@ -106,12 +106,17 @@ class plextvcleaner extends ib {
         }
 
         if (!file_exists($this->rootFolder)) {
-            $this->api->setAPIResponse('Error', 'Root folder does not exist: ' . $this->rootFolder);
+            $this->api->setAPIResponse('Error', 'Root folder does not exist or is not accessible: ' . $this->rootFolder . '. Current permissions: ' . substr(sprintf('%o', fileperms($this->rootFolder)), -4));
             return false;
         }
 
         try {
             $shows = [];
+            if (!is_readable($this->rootFolder)) {
+                $this->api->setAPIResponse('Error', 'Root folder is not readable: ' . $this->rootFolder);
+                return false;
+            }
+
             $dir = new DirectoryIterator($this->rootFolder);
             foreach ($dir as $fileinfo) {
                 if ($fileinfo->isDir() && !$fileinfo->isDot()) {
@@ -128,7 +133,11 @@ class plextvcleaner extends ib {
                 }
             }
             
-            $this->api->setAPIResponse('Success', 'Retrieved TV Shows successfully');
+            if (empty($shows)) {
+                $this->api->setAPIResponse('Warning', 'No TV shows found in ' . $this->rootFolder);
+            } else {
+                $this->api->setAPIResponse('Success', 'Retrieved ' . count($shows) . ' TV shows successfully');
+            }
             $this->api->setAPIResponseData($shows);
             return true;
         } catch (Exception $e) {
