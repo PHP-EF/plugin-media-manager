@@ -12,6 +12,7 @@ $episodesToKeep = $settings['Cleanup Settings'][0]['value'] ?? 3;
 $reportOnly = $settings['Cleanup Settings'][1]['value'] ?? 'true';
 $promptForFolderDeletion = $settings['Cleanup Settings'][2]['value'] ?? 'true';
 ?>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
