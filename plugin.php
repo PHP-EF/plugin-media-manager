@@ -195,8 +195,8 @@ class plextvcleaner extends ib {
             ),
             'Cleanup Settings' => array(
                 $this->settingsOption('input', 'Episodes to Keep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3', 'value' => $this->tvShowsEpisodeCount]),
-                $this->settingsOption('checkbox', 'Report Only', ['label' => 'Report Only Mode (No Deletions)', 'value' => $this->reportOnly]),
-                $this->settingsOption('checkbox', 'Prompt For Folder Deletion', ['label' => 'Prompt Before Folder Deletion', 'value' => $this->promptForFolderDeletion])
+                $this->settingsOption('input', 'Report Only', ['label' => 'Report Only Mode (No Deletions)', 'value' => $this->reportOnly]),
+                $this->settingsOption('input', 'Prompt For Folder Deletion', ['label' => 'Prompt Before Folder Deletion', 'value' => $this->promptForFolderDeletion])
             ),
         );
     }
