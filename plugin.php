@@ -82,6 +82,71 @@ class plextvcleaner extends ib {
         );
     }
 
+    // Tautuilli API Wrapper
+    public function tautulliAPI($Method, $Uri, $Data = "") {
+        if (!$this->tautulliApi) {
+            $this->api->setAPIResponse('Error','Tautulli URL Missing');
+            return false;
+        }
+
+        if (!$this->tautulliApiKey) {
+            $this->api->setAPIResponse('Error','Ansible API Key Missing');
+            return false;
+        }
+
+        if (strpos($Uri,$this->tautulliApi."/api/v2/") === FALSE) {
+            $Url = $this->tautulliApi."/api/v2/".$Uri;
+        } else {
+            $Url = $Uri;
+        }
+
+        $Url = $Url.'&apikey='.$this->tautulliApiKey;
+
+        if ($Method == "get") {
+            $Result = $this->api->query->$Method($Url,null,null,true);
+        } else {
+            $Result = $this->api->query->$Method($Url,$Data,null,null,true);
+        }
+
+        if (isset($Result->status_code)) {
+            if ($Result->status_code >= 400 && $Result->status_code < 600) {
+            switch($Result->status_code) {
+                case 401:
+                $this->api->setAPIResponse('Error','Tautulli API Key incorrect or expired');
+                $this->logging->writeLog("Ansible","Error. Tautulli API Key incorrect or expired.","error");
+                break;
+                case 404:
+                $this->api->setAPIResponse('Error','HTTP 404 Not Found');
+                break;
+                default:
+                $this->api->setAPIResponse('Error','HTTP '.$Result->status_code);
+                break;
+            }
+            }
+        }
+        if (isset($Result['response'])) {
+            if (isset($Result['response']['data'])) {
+                return $Result['response']['data'];
+            } else {
+                return $Result;
+            }
+        } else {
+            $this->api->setAPIResponse('Warning','No results returned from the API');
+        }
+    }
+
+    // Get a list of Tautulli Libraries
+    public function getTautulliLibraries() {
+        $this->api->setAPIResponseData($this->tautulliAPI('GET','?cmd=get_libraries'));
+    }
+
+    // Get a list of Tautulli Libraries
+    public function getTautulliMediaFromLibrary($SectionID,$Start = 0,$Length = 100) {
+        $this->api->setAPIResponseData($this->tautulliAPI('GET','?cmd=get_library_media_info&section_id='.$SectionID.'&start='.$Start.'&length='.$Length));
+    } 
+
+    // ** OLD STUFF ** //
+
     public function cleanup($params = null) {
         if (!isset($params['path'])) {
             $this->api->setAPIResponse('Error', 'Show path is required');
