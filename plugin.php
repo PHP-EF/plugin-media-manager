@@ -93,9 +93,9 @@ class plextvcleaner extends ib {
 
     public function getTvShows() {
         if (!file_exists($this->rootFolder)) {
-            return ['error' => 'TV show root folder does not exist'];
+            $this->api->setAPIResponse('Error', 'Root folder does not exist');
+            return false;
         }
-
         $shows = [];
         $dir = new DirectoryIterator($this->rootFolder);
         foreach ($dir as $fileinfo) {
@@ -112,6 +112,7 @@ class plextvcleaner extends ib {
                 }
             }
         }
+        $this->api->setAPIResponseData($shows);
         return $shows;
     }
 

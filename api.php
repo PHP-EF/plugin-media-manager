@@ -18,7 +18,7 @@ $app->get('/plugin/plextvcleaner/settings', function($request, $response, $args)
 $app->get('/plugin/plextvcleaner/shows', function($request, $response, $args) {
     $plextvcleaner = new plextvcleaner();
     if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
-       $plextvcleaner->api->setAPIResponseData($plextvcleaner->getTvShows());
+        $plextvcleaner->getTvShows();
     }
     $response->getBody()->write(jsonE($GLOBALS['api']));
     return $response
