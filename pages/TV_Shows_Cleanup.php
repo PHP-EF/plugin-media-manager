@@ -1,8 +1,12 @@
 <?php
 $plextvcleaner = new plextvcleaner();
-$settings = $plextvcleaner->_pluginGetSettings();
+$pluginConfig = $plextvcleaner->config->get('Plugins','Plex TV Cleaner');
+if ($plextvcleaner->auth->checkAccess($pluginConfig['ACL-PLEXTVCLEANER'] ?? null) == false) {
+    die();
+}
 
-// Extract values from settings options
+// Get settings from the plugin instance
+$settings = $plextvcleaner->_pluginGetSettings();
 $tautulliMonths = $settings['Tautulli Settings'][2]['value'] ?? 12;
 $episodesToKeep = $settings['Cleanup Settings'][0]['value'] ?? 3;
 $reportOnly = $settings['Cleanup Settings'][1]['value'] ?? 'true';
@@ -21,6 +25,7 @@ $promptForFolderDeletion = $settings['Cleanup Settings'][2]['value'] ?? 'true';
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Stats cards -->
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <div class="info-box bg-info">
@@ -111,31 +116,6 @@ $promptForFolderDeletion = $settings['Cleanup Settings'][2]['value'] ?? 'true';
     </div>
 </div>
 
-<!-- Activity Log -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Activity Log</h3>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover" id="activityTable">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Show Name</th>
-                        <th>Action</th>
-                        <th>Details</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="activityLog">
-                    <!-- Activity logs will be inserted here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
 <script>
 let currentCleanupPath = null;
 let plextvcleaner = {
@@ -144,6 +124,11 @@ let plextvcleaner = {
     reportOnly: <?php echo $reportOnly; ?>,
     promptForFolderDeletion: <?php echo $promptForFolderDeletion; ?>
 };
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    refreshTVShows();
+});
 
 function refreshTVShows() {
     queryAPI("GET", "/plugin/plextvcleaner/shows")
@@ -358,9 +343,3 @@ function addToActivityLog(activity) {
     `;
     tbody.insertBefore(row, tbody.firstChild);
 }
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    refreshTVShows();
-});
-</script>
