@@ -1,2 +1,2 @@
-# php-ef-plex-tv-cleaner
+# Plex TV Show Cleanup Script
 Plex TV Show Cleanup Script
