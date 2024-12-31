@@ -42,6 +42,46 @@ class plextvcleaner extends ib {
         $this->promptForFolderDeletion = $config['Prompt For Folder Deletion'] ?? true;
     }
 
+    public function _pluginGetSettings() {
+        $excludeFolders = [];
+        if (!empty($this->excludeFolders)) {
+            foreach ($this->excludeFolders as $folder) {
+                $excludeFolders[] = ['name' => $folder, 'value' => $folder];
+            }
+        }
+
+        return array(
+            'About' => array(
+                $this->settingsOption('notice', '', ['title' => 'Information', 'body' => '
+                <p>This plugin helps manage and clean up TV show folders in your Plex server environment. It integrates with Tautulli to track watched shows and applies custom cleanup rules to maintain a manageable library size.</p>
+                <br/>']),
+            ),
+            'Plugin Settings' => array(
+                $this->settingsOption('auth', 'ACL-PLEXTVCLEANER', ['label' => 'Plex TV Cleaner Plugin Access ACL'])
+            ),
+            'TV Show Settings' => array(
+                $this->settingsOption('input', 'Root Folder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV', 'value' => $this->rootFolder]),
+                $this->settingsOption('select-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'options' => $excludeFolders])
+            ),
+            'Tautulli Settings' => array(
+                $this->settingsOption('input', 'Tautulli API URL', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port/api/v2', 'value' => $this->tautulliApi]),
+                $this->settingsOption('input', 'Tautulli API Key', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key', 'value' => $this->tautulliApiKey]),
+                $this->settingsOption('input', 'Tautulli Months', ['label' => 'Months to Look Back', 'placeholder' => '12', 'value' => $this->tautulliMonths])
+            ),
+            'Cleanup Settings' => array(
+                $this->settingsOption('input', 'Episodes to Keep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3', 'value' => $this->tvShowsEpisodeCount]),
+                $this->settingsOption('select', 'Report Only', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
+                    ['name' => 'Yes', 'value' => 'true'],
+                    ['name' => 'No', 'value' => 'false']
+                ], 'value' => $this->reportOnly ? 'true' : 'false']),
+                $this->settingsOption('select', 'Prompt For Folder Deletion', ['label' => 'Prompt Before Folder Deletion', 'options' => [
+                    ['name' => 'Yes', 'value' => 'true'],
+                    ['name' => 'No', 'value' => 'false']
+                ], 'value' => $this->promptForFolderDeletion ? 'true' : 'false'])
+            ),
+        );
+    }
+
     public function getTvShows() {
         if (!file_exists($this->rootFolder)) {
             return ['error' => 'TV show root folder does not exist'];
@@ -172,38 +212,5 @@ class plextvcleaner extends ib {
         // In a web context, this would typically be handled via an API endpoint
         // that would show the confirmation dialog in the UI
         return true;
-    }
-
-    public function _pluginGetSettings() {
-        return array(
-            'About' => array(
-                $this->settingsOption('notice', '', ['title' => 'Information', 'body' => '
-                <p>This plugin helps manage and clean up TV show folders in your Plex server environment. It integrates with Tautulli to track watched shows and applies custom cleanup rules to maintain a manageable library size.</p>
-                <br/>']),
-            ),
-            'Plugin Settings' => array(
-                $this->settingsOption('auth', 'ACL-PLEXTVCLEANER', ['label' => 'Plex TV Cleaner Plugin Access ACL'])
-            ),
-            'TV Show Settings' => array(
-                $this->settingsOption('input', 'Root Folder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV', 'value' => $this->rootFolder]),
-                $this->settingsOption('input-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'placeholder' => 'Show Name', 'values' => $this->excludeFolders])
-            ),
-            'Tautulli Settings' => array(
-                $this->settingsOption('input', 'Tautulli API URL', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port/api/v2', 'value' => $this->tautulliApi]),
-                $this->settingsOption('input', 'Tautulli API Key', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key', 'value' => $this->tautulliApiKey]),
-                $this->settingsOption('input', 'Tautulli Months', ['label' => 'Months to Look Back', 'placeholder' => '12', 'value' => $this->tautulliMonths])
-            ),
-            'Cleanup Settings' => array(
-                $this->settingsOption('input', 'Episodes to Keep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3', 'value' => $this->tvShowsEpisodeCount]),
-                $this->settingsOption('select', 'Report Only', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
-                    ['name' => 'Yes', 'value' => 'true'],
-                    ['name' => 'No', 'value' => 'false']
-                ], 'value' => $this->reportOnly ? 'true' : 'false']),
-                $this->settingsOption('select', 'Prompt For Folder Deletion', ['label' => 'Prompt Before Folder Deletion', 'options' => [
-                    ['name' => 'Yes', 'value' => 'true'],
-                    ['name' => 'No', 'value' => 'false']
-                ], 'value' => $this->promptForFolderDeletion ? 'true' : 'false'])
-            ),
-        );
     }
 }
