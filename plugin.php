@@ -9,7 +9,7 @@ $GLOBALS['plugins']['Plex TV Cleaner'] = [
     'author' => 'jamiedonaldson-tinytechlabuk',
     'category' => 'Media Management',
     'link' => 'https://github.com/jamiedonaldson-tinytechlabuk/php-ef-plex-tv-cleaner',
-    'version' => '1.0.2',
+    'version' => '1.0.3',
     'image' => 'logo.png',
     'settings' => true,
     'api' => '/api/plugin/plextvcleaner/settings',
@@ -61,7 +61,7 @@ class plextvcleaner extends ib {
             ),
             'TV Show Settings' => array(
                 $this->settingsOption('input', 'Root Folder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV', 'value' => $this->rootFolder]),
-                $this->settingsOption('input-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders])
+                $this->settingsOption('input-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
             ),
             'Tautulli Settings' => array(
                 $this->settingsOption('url', 'Tautulli API URL', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port/api/v2', 'value' => $this->tautulliApi]),
@@ -83,7 +83,7 @@ class plextvcleaner extends ib {
     }
 
     // Tautuilli API Wrapper
-    public function tautulliAPI($Method, $Uri, $Data = "") {
+    public function queryTautulliAPI($Method, $Cmd, $Data = "") {
         if (!$this->tautulliApi) {
             $this->api->setAPIResponse('Error','Tautulli URL Missing');
             return false;
@@ -94,14 +94,22 @@ class plextvcleaner extends ib {
             return false;
         }
 
-        if (strpos($Uri,$this->tautulliApi."/api/v2/") === FALSE) {
-            $Url = $this->tautulliApi."/api/v2/".$Uri;
-        } else {
-            $Url = $Uri;
-        }
-
+        $Url = $this->tautulliApi."/api/v2?cmd=".$Cmd;
         $Url = $Url.'&apikey='.$this->tautulliApiKey;
+        return $this->getAPIResults($Method,$Url,$Data);
+    }
 
+    private function buildTautulliAPIQuery($Cmd,$Params = []) {
+        $QueryParams = http_build_query($Params);
+        if ($QueryParams) {
+            $Query = $Cmd.'&'.$QueryParams;
+            return $Query;
+        } else {
+            return $Cmd;
+        }
+    }
+
+    private function getAPIResults($Method, $Url, $Data) {
         if ($Method == "get") {
             $Result = $this->api->query->$Method($Url,null,null,true);
         } else {
@@ -110,18 +118,18 @@ class plextvcleaner extends ib {
 
         if (isset($Result->status_code)) {
             if ($Result->status_code >= 400 && $Result->status_code < 600) {
-            switch($Result->status_code) {
-                case 401:
-                $this->api->setAPIResponse('Error','Tautulli API Key incorrect or expired');
-                $this->logging->writeLog("Ansible","Error. Tautulli API Key incorrect or expired.","error");
-                break;
-                case 404:
-                $this->api->setAPIResponse('Error','HTTP 404 Not Found');
-                break;
-                default:
-                $this->api->setAPIResponse('Error','HTTP '.$Result->status_code);
-                break;
-            }
+                switch($Result->status_code) {
+                    case 401:
+                    $this->api->setAPIResponse('Error','Tautulli API Key incorrect or expired');
+                    $this->logging->writeLog("Ansible","Error. Tautulli API Key incorrect or expired.","error");
+                    break;
+                    case 404:
+                    $this->api->setAPIResponse('Error','HTTP 404 Not Found');
+                    break;
+                    default:
+                    $this->api->setAPIResponse('Error','HTTP '.$Result->status_code);
+                    break;
+                }
             }
         }
         if (isset($Result['response'])) {
@@ -137,13 +145,58 @@ class plextvcleaner extends ib {
 
     // Get a list of Tautulli Libraries
     public function getTautulliLibraries() {
-        $this->api->setAPIResponseData($this->tautulliAPI('GET','?cmd=get_libraries'));
+        $Result = $this->queryTautulliAPI('GET',$this->buildTautulliAPIQuery('get_libraries'));
+        $this->api->setAPIResponseData($Result);
+        return $Result;
     }
 
-    // Get a list of Tautulli Libraries
-    public function getTautulliMediaFromLibrary($SectionID,$Start = 0,$Length = 100) {
-        $this->api->setAPIResponseData($this->tautulliAPI('GET','?cmd=get_library_media_info&section_id='.$SectionID.'&start='.$Start.'&length='.$Length));
-    } 
+    // Get a list of Media from a particular library
+    public function getTautulliMediaFromLibrary($Params) {
+        $Result = $this->queryTautulliAPI('GET',$this->buildTautulliAPIQuery('get_library_media_info',$Params));
+        $this->api->setAPIResponseData($Result);
+        return $Result;
+    }
+
+    // Get a list of unwatched items from the specified library
+    public function getTautulliUnwatched($SectionID) {
+        $Params = array(
+            "section_id" => $SectionID,
+            "length" => 10000 // Anything higher would probably need some form of paging
+        );
+        // Get a list of Media
+        $Media = $this->queryTautulliAPI('GET',$this->buildTautulliAPIQuery('get_library_media_info',$Params));
+        // Filter TV shows that have never been watched
+        $unwatched_shows = array_filter($Media['data'], function($show) {
+            return empty($show['last_played']);
+        });
+        $this->api->setAPIResponseData($unwatched_shows);
+        return $unwatched_shows;
+    }
+
+    public function getTautulliTVShows() {
+        $Libraries = $this->getTautulliLibraries();
+        $TVLibraries = array_filter($Libraries, function($Library) {
+            return $Library['section_type'] == 'show';
+        });
+        $Results = array();
+        foreach ($TVLibraries as $TVLibrary) {
+            $Params = array(
+                'section_id' => $TVLibrary['section_id'],
+                'length' => 10000
+            );
+            $Result = $this->getTautulliMediaFromLibrary($Params);
+            
+            if (is_array($Result)) {
+                foreach ($Result['data'] as &$item) {
+                    $item['library_name'] = $TVLibrary['section_name']; // Add library name to each item
+                }
+                $Results = array_merge($Results, $Result['data']);
+            } else {
+                echo "Warning: Result is not an array\n";
+            }
+        }
+        $this->api->setAPIResponseData($Results);
+    }
 
     // ** OLD STUFF ** //
 

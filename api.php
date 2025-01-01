@@ -29,9 +29,30 @@ $app->get('/plugin/plextvcleaner/tautulli/libraries/{id}', function($request, $r
     $plextvcleaner = new plextvcleaner();
     if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
         $data = $request->getQueryParams();
-        $Length = $data['limit'] ?? 100;
-        $Start = ($data['page'] == 1) ? 0 : ($data['page'] * $Length ?? 0);
-        $plextvcleaner->getTautulliMediaFromLibrary($args['id'],$Start,$Length);
+        $data['section_id'] = $args['id'];
+        $plextvcleaner->getTautulliMediaFromLibrary($data);
+    }
+    $response->getBody()->write(jsonE($GLOBALS['api']));
+    return $response
+        ->withHeader('Content-Type', 'application/json;charset=UTF-8')
+        ->withStatus($GLOBALS['responseCode']);
+});
+
+$app->get('/plugin/plextvcleaner/tautulli/libraries/{id}/unwatched', function($request, $response, $args) {
+    $plextvcleaner = new plextvcleaner();
+    if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
+        $plextvcleaner->getTautulliUnwatched($args['id']);
+    }
+    $response->getBody()->write(jsonE($GLOBALS['api']));
+    return $response
+        ->withHeader('Content-Type', 'application/json;charset=UTF-8')
+        ->withStatus($GLOBALS['responseCode']);
+});
+
+$app->get('/plugin/plextvcleaner/tautulli/tvshows', function($request, $response, $args) {
+    $plextvcleaner = new plextvcleaner();
+    if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
+        $plextvcleaner->getTautulliTVShows();
     }
     $response->getBody()->write(jsonE($GLOBALS['api']));
     return $response
