@@ -6,13 +6,8 @@
     "category": "Media Management",
     "description": "Plugin for managing and cleaning up Plex TV show folders based on watch history and custom rules",
     "icon": "https://raw.githubusercontent.com/TehMuffinMoo/php-ef-plugin-example/main/logo.png",
-<<<<<<< HEAD
-    "contact": "https://github.com/jamiedonaldson-tinytechlabuk/php-ef-plex-tv-cleaner/issues",
-    "link": "https://github.com/jamiedonaldson-tinytechlabuk/php-ef-plex-tv-cleaner",
-=======
     "contact": "https://github.com/tinytechlabuk/php-ef-plex-tv-cleaner/issues",
     "link": "https://github.com/tinytechlabuk/php-ef-plex-tv-cleaner",
->>>>>>> 3c99b40cb9d440c9b9d07717c29a983ee09f8ff7
     "version": "1.0.4",
     "minimum_php-ef_version": "0.7.2",
     "release_date": "2024-12-31",
