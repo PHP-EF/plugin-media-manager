@@ -11,11 +11,6 @@ return '
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">TV Shows Cleanup Status</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-primary btn-sm" onclick="refreshTVShows()">
-                            <i class="fas fa-sync"></i> Refresh
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -31,7 +26,7 @@ return '
                             <h5 class="card-title">TV Shows: </h5>
                         </div>
                         <div class="pt-1 ps-3">
-                            <h6 id="totalShows" class="metric-circle border-5"></h6>
+                            <h6 id="totalShows" class="metric-circle border-5">N/A</h6>
                         </div>
                     </div>
                 </div>
