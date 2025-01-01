@@ -187,6 +187,9 @@ class plextvcleaner extends ib {
             $Result = $this->getTautulliMediaFromLibrary($Params);
             
             if (is_array($Result)) {
+                foreach ($Result['data'] as &$item) {
+                    $item['library_name'] = $TVLibrary['section_name']; // Add library name to each item
+                }
                 $Results = array_merge($Results, $Result['data']);
             } else {
                 echo "Warning: Result is not an array\n";

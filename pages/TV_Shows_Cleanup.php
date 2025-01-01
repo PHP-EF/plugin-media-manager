@@ -110,7 +110,7 @@ return '
                         <th data-field="title" data-sortable="true" data-filter-control="input">Show Name</th>
                         <th data-field="last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
                         <th data-field="play_count" data-sortable="true" data-filter-control="input">Play Count</th>
-                        <th data-field="section_id" data-sortable="true" data-filter-control="select">Section ID</th>
+                        <th data-field="library_name" data-sortable="true" data-filter-control="select">Library</th>
                     </tr>
                     </thead>
                 </table>
