@@ -6,17 +6,26 @@ function convertEpochToGMT(epochTime) {
     return date.toGMTString();
 }
 
+function convertBytesToGB(bytes) {
+    const GB = 1024 * 1024 * 1024; // 1 GB = 1024^3 bytes
+    return (bytes / GB).toFixed(2);
+}
+
 // Tautulli Bootstrap Table Response Handler
 function tautulliResponseHandler(response) {
     const data = response.data;
     if (response.result == "Success") {
-        data.sort((a, b) => b.last_played - a.last_played);
+        data.sort((a, b) => b.Tautulli.last_played - a.Tautulli.last_played);
         const totalShows = data.length;
         const recentShows = data.filter(row => {
-            const lastPlayedDate = new Date(row.last_played * 1000); // Convert epoch to date
-            const ninetyDaysAgo = new Date();
-            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-            return lastPlayedDate >= ninetyDaysAgo;
+            if (row.Tautulli.length != 0) {
+                const lastPlayedDate = new Date(row.Tautulli.last_played * 1000); // Convert epoch to date
+                const ninetyDaysAgo = new Date();
+                ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                return lastPlayedDate >= ninetyDaysAgo;
+            } else {
+                return false;
+            }
         }).length;
 
         $('#recentlyWatched').text(recentShows);
@@ -29,12 +38,28 @@ function tautulliResponseHandler(response) {
 
 // Tautulli Last Watched Date Formatter
 function tautulliLastWatchedFormatter(value, row, index) {
-    if (row.last_played) {
-        return convertEpochToGMT(row.last_played);
+    if (row.Tautulli.last_played) {
+        return convertEpochToGMT(row.Tautulli.last_played);
     } else {
         return 'Never';
     }
 }
+
+// Bytes to GB Formatter
+function sonarrSizeOnDiskFormatter(value, row, index) {
+    if (row.statistics.sizeOnDisk) {
+        return convertBytesToGB(row.statistics.sizeOnDisk)+' GB';
+    }
+}
+
+function sonarrEpisodeProgressFormatter(value, row, index) {
+    if (row.statistics.percentOfEpisodes) {
+        var percentage = row.statistics.percentOfEpisodes.toFixed(2);
+        return '<div class="progress"><div class="progress-bar bg-info" role="progressbar" style="width: '+percentage+'%" aria-valuenow="'+percentage+'" aria-valuemin="0" aria-valuemax="100">'+percentage+'%</div></div>';
+    }
+}
+
+
 
 // Initate TV Shows Table
 $("#tvShowsTable").bootstrapTable();

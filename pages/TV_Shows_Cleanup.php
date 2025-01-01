@@ -89,7 +89,7 @@ return '
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                <table data-url="/api/plugin/plextvcleaner/tautulli/tvshows"
+                <table data-url="/api/plugin/plextvcleaner/combined/tvshows"
                     data-toggle="table"
                     data-search="true"
                     data-filter-control="true"
@@ -108,9 +108,17 @@ return '
                     <tr>
                         <th data-field="state" data-checkbox="true"></th>
                         <th data-field="title" data-sortable="true" data-filter-control="input">Show Name</th>
-                        <th data-field="last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
-                        <th data-field="play_count" data-sortable="true" data-filter-control="input">Play Count</th>
-                        <th data-field="library_name" data-sortable="true" data-filter-control="select">Library</th>
+                        <th data-field="monitored" data-sortable="true" data-filter-control="input" data-visible="false">Monitored</th>
+                        <th data-field="status" data-sortable="true" data-filter-control="input">Show Status</th>
+                        <th data-field="MatchStatus" data-sortable="true" data-filter-control="input" data-visible="false">Match Status</th>
+                        <th data-field="statistics.seasonCount" data-sortable="true" data-filter-control="input">Season Count</th>
+                        <th data-field="statistics.episodeCount" data-sortable="true" data-filter-control="input">Episode Count</th>
+                        <th data-field="statistics.percentOfEpisodes" data-sortable="true" data-formatter="sonarrEpisodeProgressFormatter" data-filter-control="input">Episodes Downloaded</th>
+                        <th data-field="statistics.sizeOnDisk" data-sortable="true" data-formatter="sonarrSizeOnDiskFormatter" data-filter-control="input">Size</th>
+                        <th data-field="statistics.seriesType" data-sortable="true" data-filter-control="input" data-visible="false">Series Type</th>
+                        <th data-field="Tautulli.last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
+                        <th data-field="Tautulli.play_count" data-sortable="true" data-filter-control="input">Play Count</th>
+                        <th data-field="Tautulli.library_name" data-sortable="true" data-filter-control="select">Library</th>
                     </tr>
                     </thead>
                 </table>

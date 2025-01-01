@@ -200,7 +200,7 @@ class plextvcleaner extends ib {
                     $Results = array_merge($Results, $Result['data']);
                 }
             }
-            $this->api->setAPIResponseData($Results);
+            return $Results;
         }  
     }
 
@@ -238,8 +238,82 @@ class plextvcleaner extends ib {
 
     public function getSonarrTVShows() {
         $Result = $this->querySonarrAPI('GET','series');
-        $this->api->setAPIResponseData($Result);
+        return $Result;
     }
+
+
+    // **
+    // MATCH TAUTULLI -> SONARR
+    // **
+
+    function normalizeTitle($title) {
+        // Remove special characters and convert to lowercase
+        return strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $title));
+    }
+
+    function queryAndMatchSonarrAndTautulli() {
+        // Decode JSON data into PHP arrays
+        $Sonarr = $this->getSonarrTVShows();
+        $Tautulli = $this->getTautulliTVShows();
+    
+        // Create an associative array for quick lookup from Tautulli data
+        $TautulliShowsList = [];
+        foreach ($Tautulli as $TautulliShow) {
+            $TautulliNormalizedTitle = $this->normalizeTitle($TautulliShow['title']);
+            $TautulliShowsList[$TautulliNormalizedTitle] = $TautulliShow;
+        }
+    
+        if ($Sonarr && $Tautulli) {
+            // Match TV shows
+            $Combined = [];
+            foreach ($Sonarr as $SonarrShow) {
+                $TautulliShow = null;
+
+                // Check if show has any episodes, if not then skip the Tautulli check as it won't be on Plex
+                if ($SonarrShow['statistics']['episodeFileCount'] > 0) {
+                    // Normalize title
+                    $SonarrNormalizedTitle = $this->normalizeTitle($SonarrShow['title']);
+        
+                    // Check primary title
+                    if (isset($TautulliShowsList[$SonarrNormalizedTitle])) {
+                        $TautulliShow = $TautulliShowsList[$SonarrNormalizedTitle];
+                    } else {
+                        // Check alternative titles if primary title doesn't match
+                        if (isset($SonarrShow['alternateTitles'])) {
+                            foreach ($SonarrShow['alternateTitles'] as $altTitle) {
+                                $altNormalizedTitle = $this->normalizeTitle($altTitle['title']);
+                                if (isset($TautulliShowsList[$altNormalizedTitle])) {
+                                    $TautulliShow = $TautulliShowsList[$altNormalizedTitle];
+                                    break; // Break out of the loop
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    $SonarrShow['MatchStatus'] = 'No Episodes';
+                }
+    
+                if ($TautulliShow) {
+                    $SonarrShow['Tautulli'] = $TautulliShow;
+                    $SonarrShow['MatchStatus'] = 'Matched';
+                } else {
+                    // echo $SonarrShow['title']."\r\n";
+                    // echo $SonarrNormalizedTitle."\r\n";
+                    $SonarrShow['Tautulli'] = [];
+                    if (!isset($SonarrShow['MatchStatus'])) {
+                        $SonarrShow['MatchStatus'] = 'Unmatched';
+                    }
+                }
+                $Combined[] = $SonarrShow;
+            }
+            $this->api->setAPIResponseData($Combined);
+            return $Combined;
+        } else {
+            $this->api->setAPIResponse('Error', 'Tautulli or Sonarr did not respond as expected.', null, []);
+        }
+    }
+
+
 
 
 
