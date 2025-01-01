@@ -22,7 +22,7 @@ function tautulliResponseHandler(response) {
         $('#totalShows').text(totalShows);
         return data;
     } else {
-        toast("Error", "", data.message, "danger", "30000");
+        toast("Error", "", response.message, "danger", "30000");
     }
 }
 

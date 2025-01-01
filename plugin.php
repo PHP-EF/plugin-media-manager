@@ -16,14 +16,7 @@ $GLOBALS['plugins']['Plex TV Cleaner'] = [
 ];
 
 class plextvcleaner extends ib {
-    private $rootFolder;
-    private $excludeFolders;
-    private $tautulliApi;
-    private $tautulliApiKey;
-    private $tautulliMonths;
-    private $tvShowsEpisodeCount;
-    private $reportOnly;
-    private $promptForFolderDeletion;
+    private $pluginConfig;
 
     public function __construct() {
         parent::__construct();
@@ -31,21 +24,17 @@ class plextvcleaner extends ib {
     }
 
     private function loadConfig() {
-        $config = $this->config->get('Plugins', 'Plex TV Cleaner');
-        $this->rootFolder = $config['Root Folder'] ?? '';
-        $this->excludeFolders = $config['Exclude Folders'] ?? [];
-        $this->tautulliApi = $config['Tautulli API URL'] ?? '';
-        $this->tautulliApiKey = $config['Tautulli API Key'] ?? '';
-        $this->tautulliMonths = $config['Tautulli Months'] ?? 12;
-        $this->tvShowsEpisodeCount = $config['Episodes to Keep'] ?? 3;
-        $this->reportOnly = $config['Report Only'] ?? true;
-        $this->promptForFolderDeletion = $config['Prompt For Folder Deletion'] ?? true;
+        $this->pluginConfig = $this->config->get('Plugins', 'Plex TV Cleaner');
+        $this->pluginConfig['tautulliMonths'] = $this->pluginConfig['tautulliMonths'] ?? 12;
+        $this->pluginConfig['episodesToKeep'] = $this->pluginConfig['episodesToKeep'] ?? 3;
+        $this->pluginConfig['reportOnly'] = $this->pluginConfig['reportOnly'] ?? true;
+        $this->pluginConfig['promptForFolderDeletion'] = $this->pluginConfig['promptForFolderDeletion'] ?? true;
     }
 
     public function _pluginGetSettings() {
         $excludeFolders = [];
-        if (!empty($this->excludeFolders)) {
-            foreach ($this->excludeFolders as $folder) {
+        if (!empty($this->pluginConfig['excludeFolders'])) {
+            foreach ($this->pluginConfig['excludeFolders'] as $folder) {
                 $excludeFolders[] = $folder;
             }
         }
@@ -60,55 +49,34 @@ class plextvcleaner extends ib {
                 $this->settingsOption('auth', 'ACL-PLEXTVCLEANER', ['label' => 'Plex TV Cleaner Plugin Access ACL'])
             ),
             'TV Show Settings' => array(
-                $this->settingsOption('input', 'Root Folder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV', 'value' => $this->rootFolder]),
-                $this->settingsOption('input-multiple', 'Exclude Folders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
+                $this->settingsOption('input', 'tvRootFolder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV']),
+                $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
             ),
             'Tautulli Settings' => array(
-                $this->settingsOption('url', 'Tautulli API URL', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port/api/v2', 'value' => $this->tautulliApi]),
-                $this->settingsOption('input', 'Tautulli API Key', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key', 'value' => $this->tautulliApiKey]),
-                $this->settingsOption('input', 'Tautulli Months', ['label' => 'Months to Look Back', 'placeholder' => '12', 'value' => $this->tautulliMonths])
+                $this->settingsOption('url', 'tautulliUrl', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('input', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('input', 'tautulliMonths', ['label' => 'Months to Look Back', 'placeholder' => '12'])
+            ),
+            'Sonarr Settings' => array(
+                $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('input', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Report Only Mode (No Deletions)', 'options' => array(array("name" => 'v1', "value" => 'v1'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v3', "value" => 'v3'))]),
             ),
             'Cleanup Settings' => array(
-                $this->settingsOption('input', 'Episodes to Keep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3', 'value' => $this->tvShowsEpisodeCount]),
-                $this->settingsOption('select', 'Report Only', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
+                $this->settingsOption('input', 'episodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
+                $this->settingsOption('select', 'reportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
                     ['name' => 'Yes', 'value' => 'true'],
                     ['name' => 'No', 'value' => 'false']
-                ], 'value' => $this->reportOnly ? 'true' : 'false']),
+                ]]),
                 $this->settingsOption('select', 'Prompt For Folder Deletion', ['label' => 'Prompt Before Folder Deletion', 'options' => [
                     ['name' => 'Yes', 'value' => 'true'],
                     ['name' => 'No', 'value' => 'false']
-                ], 'value' => $this->promptForFolderDeletion ? 'true' : 'false'])
+                ]])
             ),
         );
     }
 
-    // Tautuilli API Wrapper
-    public function queryTautulliAPI($Method, $Cmd, $Data = "") {
-        if (!$this->tautulliApi) {
-            $this->api->setAPIResponse('Error','Tautulli URL Missing');
-            return false;
-        }
-
-        if (!$this->tautulliApiKey) {
-            $this->api->setAPIResponse('Error','Ansible API Key Missing');
-            return false;
-        }
-
-        $Url = $this->tautulliApi."/api/v2?cmd=".$Cmd;
-        $Url = $Url.'&apikey='.$this->tautulliApiKey;
-        return $this->getAPIResults($Method,$Url,$Data);
-    }
-
-    private function buildTautulliAPIQuery($Cmd,$Params = []) {
-        $QueryParams = http_build_query($Params);
-        if ($QueryParams) {
-            $Query = $Cmd.'&'.$QueryParams;
-            return $Query;
-        } else {
-            return $Cmd;
-        }
-    }
-
+    // Generic Get API Results Function, to be shared across any API Wrappers
     private function getAPIResults($Method, $Url, $Data) {
         if ($Method == "get") {
             $Result = $this->api->query->$Method($Url,null,null,true);
@@ -120,26 +88,64 @@ class plextvcleaner extends ib {
             if ($Result->status_code >= 400 && $Result->status_code < 600) {
                 switch($Result->status_code) {
                     case 401:
-                    $this->api->setAPIResponse('Error','Tautulli API Key incorrect or expired');
-                    $this->logging->writeLog("Ansible","Error. Tautulli API Key incorrect or expired.","error");
-                    break;
+                        $this->api->setAPIResponse('Error','API Key incorrect or expired');
+                        $this->logging->writeLog("PlexTVCleaner","Error. API Key incorrect or expired.","error");
+                        return;
                     case 404:
-                    $this->api->setAPIResponse('Error','HTTP 404 Not Found');
-                    break;
+                        $this->api->setAPIResponse('Error','HTTP 404 Not Found');
+                        return;
                     default:
-                    $this->api->setAPIResponse('Error','HTTP '.$Result->status_code);
-                    break;
+                        $this->api->setAPIResponse('Error','HTTP '.$Result->status_code);
+                        return;
                 }
             }
         }
-        if (isset($Result['response'])) {
-            if (isset($Result['response']['data'])) {
-                return $Result['response']['data'];
+        if (is_array($Result)) {
+            if (isset($Result['response'])) {
+                if (isset($Result['response']['data'])) {
+                    return $Result['response']['data'];
+                } else {
+                    return $Result;
+                }
             } else {
                 return $Result;
             }
         } else {
             $this->api->setAPIResponse('Warning','No results returned from the API');
+        }
+    }
+
+
+
+    // **
+    // TAUTULLI
+    // **
+
+    // Tautuilli API Wrapper
+    public function queryTautulliAPI($Method, $Cmd, $Data = "") {
+        if (!isset($this->pluginConfig['tautulliUrl'])) {
+            $this->api->setAPIResponse('Error','Tautulli URL Missing');
+            return false;
+        }
+
+        if (!isset($this->pluginConfig['tautulliApiKey'])) {
+            $this->api->setAPIResponse('Error','Tautulli API Key Missing');
+            return false;
+        }
+
+        $Url = $this->pluginConfig['tautulliUrl']."/api/v2?cmd=".$Cmd;
+        $Url = $Url.'&apikey='.$this->pluginConfig['tautulliApiKey'];
+        return $this->getAPIResults($Method,$Url,$Data);
+    }
+
+    // Tautulli API Helper for building queries
+    private function buildTautulliAPIQuery($Cmd,$Params = []) {
+        $QueryParams = http_build_query($Params);
+        if ($QueryParams) {
+            $Query = $Cmd.'&'.$QueryParams;
+            return $Query;
+        } else {
+            return $Cmd;
         }
     }
 
@@ -175,30 +181,71 @@ class plextvcleaner extends ib {
 
     public function getTautulliTVShows() {
         $Libraries = $this->getTautulliLibraries();
-        $TVLibraries = array_filter($Libraries, function($Library) {
-            return $Library['section_type'] == 'show';
-        });
-        $Results = array();
-        foreach ($TVLibraries as $TVLibrary) {
-            $Params = array(
-                'section_id' => $TVLibrary['section_id'],
-                'length' => 10000
-            );
-            $Result = $this->getTautulliMediaFromLibrary($Params);
-            
-            if (is_array($Result)) {
-                foreach ($Result['data'] as &$item) {
-                    $item['library_name'] = $TVLibrary['section_name']; // Add library name to each item
+        if ($Libraries) {
+            $TVLibraries = array_filter($Libraries, function($Library) {
+                return $Library['section_type'] == 'show';
+            });
+            $Results = array();
+            foreach ($TVLibraries as $TVLibrary) {
+                $Params = array(
+                    'section_id' => $TVLibrary['section_id'],
+                    'length' => 10000
+                );
+                $Result = $this->getTautulliMediaFromLibrary($Params);
+                
+                if (is_array($Result)) {
+                    foreach ($Result['data'] as &$item) {
+                        $item['library_name'] = $TVLibrary['section_name']; // Add library name to each item
+                    }
+                    $Results = array_merge($Results, $Result['data']);
                 }
-                $Results = array_merge($Results, $Result['data']);
-            } else {
-                echo "Warning: Result is not an array\n";
             }
-        }
-        $this->api->setAPIResponseData($Results);
+            $this->api->setAPIResponseData($Results);
+        }  
     }
 
-    // ** OLD STUFF ** //
+
+    // **
+    // SONARR
+    // **
+    // Sonarr API Wrapper
+    public function querySonarrAPI($Method, $Uri, $Data = "") {
+        if (!$this->pluginConfig['sonarrUrl']) {
+            $this->api->setAPIResponse('Error','Sonarr URL Missing');
+            return false;
+        }
+
+        if (!$this->pluginConfig['sonarrApiKey']) {
+            $this->api->setAPIResponse('Error','Sonarr API Key Missing');
+            return false;
+        }
+
+        $Url = $this->pluginConfig['sonarrUrl']."/api/".$this->pluginConfig['sonarrApiVersion']."/".$Uri;
+        $Url = $Url.'?apikey='.$this->pluginConfig['sonarrApiKey'];
+        return $this->getAPIResults($Method,$Url,$Data);
+    }
+
+    // Sonarr API Helper for building queries
+    private function buildSonarrAPIQuery($Cmd,$Params = []) {
+        $QueryParams = http_build_query($Params);
+        if ($QueryParams) {
+            $Query = '&'.$QueryParams;
+            return $Query;
+        } else {
+            return $Cmd;
+        }
+    }
+
+    public function getSonarrTVShows() {
+        $Result = $this->querySonarrAPI('GET','series');
+        $this->api->setAPIResponseData($Result);
+    }
+
+
+
+    // **
+    // OLD STUFF
+    // **
 
     public function cleanup($params = null) {
         if (!isset($params['path'])) {
@@ -218,16 +265,16 @@ class plextvcleaner extends ib {
     }
 
     public function getTvShows() {
-        if (!file_exists($this->rootFolder)) {
+        if (!file_exists($this->pluginConfig['rootFolder'])) {
             $this->api->setAPIResponse('Error', 'Root folder does not exist');
             return false;
         }
         $shows = [];
-        $dir = new DirectoryIterator($this->rootFolder);
+        $dir = new DirectoryIterator($this->pluginConfig['rootFolder']);
         foreach ($dir as $fileinfo) {
             if ($fileinfo->isDir() && !$fileinfo->isDot()) {
                 $showName = $fileinfo->getFilename();
-                if (!in_array($showName, $this->excludeFolders)) {
+                if (!in_array($showName, $this->pluginConfig['excludeFolders'])) {
                     $shows[] = [
                         'name' => $showName,
                         'path' => $fileinfo->getPathname(),
@@ -267,14 +314,14 @@ class plextvcleaner extends ib {
     }
 
     private function getLastWatchedDate($showName) {
-        if (empty($this->tautulliApi) || empty($this->tautulliApiKey)) {
+        if (empty($this->pluginConfig['tautulliUrl']) || empty($this->pluginConfig['tautulliApiKey'])) {
             return null;
         }
 
         $url = sprintf(
             '%s?apikey=%s&cmd=get_history&length=1&title=%s',
-            rtrim($this->tautulliApi, '/'),
-            $this->tautulliApiKey,
+            rtrim($this->pluginConfig['tautulliUrl'], '/'),
+            $this->pluginConfig['tautulliApiKey'],
             urlencode($showName)
         );
 
@@ -293,7 +340,7 @@ class plextvcleaner extends ib {
 
     public function cleanupShow($showPath, $dryRun = null) {
         if ($dryRun === null) {
-            $dryRun = $this->reportOnly;
+            $dryRun = $this->pluginConfig['reportOnly'];
         }
 
         if (!file_exists($showPath)) {
@@ -323,14 +370,14 @@ class plextvcleaner extends ib {
         });
 
         // Mark episodes for deletion, keeping the newest N episodes
-        for ($i = $this->tvShowsEpisodeCount; $i < count($episodes); $i++) {
+        for ($i = $this->pluginConfig['tvShowsEpisodeCount']; $i < count($episodes); $i++) {
             $filesToDelete[] = $episodes[$i]['path'];
             $totalSize += $episodes[$i]['size'];
         }
 
         // If not a dry run and not prompting, or if prompting and user confirmed, delete the files
         if (!$dryRun) {
-            if (!$this->promptForFolderDeletion || $this->confirmDeletion($showPath, $filesToDelete, $totalSize)) {
+            if (!$this->pluginConfig['promptForFolderDeletion'] || $this->confirmDeletion($showPath, $filesToDelete, $totalSize)) {
                 foreach ($filesToDelete as $file) {
                     unlink($file);
                 }

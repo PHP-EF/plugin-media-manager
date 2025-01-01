@@ -14,6 +14,10 @@ $app->get('/plugin/plextvcleaner/settings', function($request, $response, $args)
 		->withStatus($GLOBALS['responseCode']);
 });
 
+// **
+// TAUTULLI
+// **
+
 $app->get('/plugin/plextvcleaner/tautulli/libraries', function($request, $response, $args) {
     $plextvcleaner = new plextvcleaner();
     if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
@@ -53,6 +57,21 @@ $app->get('/plugin/plextvcleaner/tautulli/tvshows', function($request, $response
     $plextvcleaner = new plextvcleaner();
     if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
         $plextvcleaner->getTautulliTVShows();
+    }
+    $response->getBody()->write(jsonE($GLOBALS['api']));
+    return $response
+        ->withHeader('Content-Type', 'application/json;charset=UTF-8')
+        ->withStatus($GLOBALS['responseCode']);
+});
+
+
+// **
+// SONARR
+// **
+$app->get('/plugin/plextvcleaner/sonarr/tvshows', function($request, $response, $args) {
+    $plextvcleaner = new plextvcleaner();
+    if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
+        $plextvcleaner->getSonarrTVShows();
     }
     $response->getBody()->write(jsonE($GLOBALS['api']));
     return $response
