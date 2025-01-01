@@ -6,10 +6,10 @@
 // PLUGIN INFORMATION - This should match what is in plugin.json
 $GLOBALS['plugins']['Plex TV Cleaner'] = [
     'name' => 'Plex TV Cleaner',
-    'author' => 'jamiedonaldson-tinytechlabuk',
+    'author' => 'tinytechlabuk',
     'category' => 'Media Management',
-    'link' => 'https://github.com/jamiedonaldson-tinytechlabuk/php-ef-plex-tv-cleaner',
-    'version' => '1.0.3',
+    'link' => 'https://github.com/-tinytechlabuk/php-ef-plex-tv-cleaner',
+    'version' => '1.0.4',
     'image' => 'logo.png',
     'settings' => true,
     'api' => '/api/plugin/plextvcleaner/settings',
