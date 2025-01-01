@@ -185,7 +185,12 @@ class plextvcleaner extends ib {
                 'length' => 10000
             );
             $Result = $this->getTautulliMediaFromLibrary($Params);
-            $Results = array_merge($Results,$Result);
+            
+            if (is_array($Result)) {
+                $Results = array_merge($Results, $Result['data']);
+            } else {
+                echo "Warning: Result is not an array\n";
+            }
         }
         $this->api->setAPIResponseData($Results);
     }

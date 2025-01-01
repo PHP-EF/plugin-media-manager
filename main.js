@@ -7,10 +7,11 @@ function convertEpochToGMT(epochTime) {
 }
 
 // Tautulli Bootstrap Table Response Handler
-function tautulliResponseHandler(data) {
-    if (data.result == "Success") {
-        const totalShows = data.data.data.length;
-        const recentShows = data.data.data.filter(row => {
+function tautulliResponseHandler(response) {
+    const data = response.data;
+    if (response.result == "Success") {
+        const totalShows = data.length;
+        const recentShows = data.filter(row => {
             const lastPlayedDate = new Date(row.last_played * 1000); // Convert epoch to date
             const ninetyDaysAgo = new Date();
             ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -19,7 +20,7 @@ function tautulliResponseHandler(data) {
 
         $('#recentlyWatched').text(recentShows);
         $('#totalShows').text(totalShows);
-        return data.data.data;
+        return data;
     } else {
         toast("Error", "", data.message, "danger", "30000");
     }
