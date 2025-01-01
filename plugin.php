@@ -170,7 +170,7 @@ class plextvcleaner extends ib {
             "length" => 10000 // Anything higher would probably need some form of paging
         );
         // Get a list of Media
-        $Media = $this->queryTautulliAPI('GET',$this->buildTautulliAPIQuery('get_library_media_info',$Params));
+        $Media = $this->getTautulliMediaFromLibrary($SectionID);
         // Filter TV shows that have never been watched
         $unwatched_shows = array_filter($Media['data'], function($show) {
             return empty($show['last_played']);
@@ -297,8 +297,6 @@ class plextvcleaner extends ib {
                     $SonarrShow['Tautulli'] = $TautulliShow;
                     $SonarrShow['MatchStatus'] = 'Matched';
                 } else {
-                    // echo $SonarrShow['title']."\r\n";
-                    // echo $SonarrNormalizedTitle."\r\n";
                     $SonarrShow['Tautulli'] = [];
                     if (!isset($SonarrShow['MatchStatus'])) {
                         $SonarrShow['MatchStatus'] = 'Unmatched';
@@ -311,164 +309,6 @@ class plextvcleaner extends ib {
         } else {
             $this->api->setAPIResponse('Error', 'Tautulli or Sonarr did not respond as expected.', null, []);
         }
-    }
-
-
-
-
-
-    // **
-    // OLD STUFF
-    // **
-
-    public function cleanup($params = null) {
-        if (!isset($params['path'])) {
-            $this->api->setAPIResponse('Error', 'Show path is required');
-            return false;
-        }
-
-        $dryRun = isset($params['dryRun']) ? filter_var($params['dryRun'], FILTER_VALIDATE_BOOLEAN) : null;
-        $results = $this->cleanupShow($params['path'], $dryRun);
-        if (isset($results)) {
-            $this->api->setAPIResponseData($results);
-            return $results;
-        } else {
-            $this->api->setAPIResponse('Error', 'Failed to clean up show');
-            return false;
-        }
-    }
-
-    public function getTvShows() {
-        if (!file_exists($this->pluginConfig['rootFolder'])) {
-            $this->api->setAPIResponse('Error', 'Root folder does not exist');
-            return false;
-        }
-        $shows = [];
-        $dir = new DirectoryIterator($this->pluginConfig['rootFolder']);
-        foreach ($dir as $fileinfo) {
-            if ($fileinfo->isDir() && !$fileinfo->isDot()) {
-                $showName = $fileinfo->getFilename();
-                if (!in_array($showName, $this->pluginConfig['excludeFolders'])) {
-                    $shows[] = [
-                        'name' => $showName,
-                        'path' => $fileinfo->getPathname(),
-                        'episodeCount' => $this->countEpisodes($fileinfo->getPathname()),
-                        'size' => $this->getFolderSize($fileinfo->getPathname()),
-                        'lastWatched' => $this->getLastWatchedDate($showName)
-                    ];
-                }
-            }
-        }
-        $this->api->setAPIResponseData($shows);
-        return $shows;
-    }
-
-    private function countEpisodes($path) {
-        $count = 0;
-        $dir = new RecursiveDirectoryIterator($path);
-        $iterator = new RecursiveIteratorIterator($dir);
-        foreach ($iterator as $file) {
-            if ($file->isFile() && in_array($file->getExtension(), ['mkv', 'mp4', 'avi'])) {
-                $count++;
-            }
-        }
-        return $count;
-    }
-
-    private function getFolderSize($path) {
-        $size = 0;
-        $dir = new RecursiveDirectoryIterator($path);
-        $iterator = new RecursiveIteratorIterator($dir);
-        foreach ($iterator as $file) {
-            if ($file->isFile()) {
-                $size += $file->getSize();
-            }
-        }
-        return $size;
-    }
-
-    private function getLastWatchedDate($showName) {
-        if (empty($this->pluginConfig['tautulliUrl']) || empty($this->pluginConfig['tautulliApiKey'])) {
-            return null;
-        }
-
-        $url = sprintf(
-            '%s?apikey=%s&cmd=get_history&length=1&title=%s',
-            rtrim($this->pluginConfig['tautulliUrl'], '/'),
-            $this->pluginConfig['tautulliApiKey'],
-            urlencode($showName)
-        );
-
-        $response = @file_get_contents($url);
-        if ($response === false) {
-            return null;
-        }
-
-        $data = json_decode($response, true);
-        if (isset($data['response']['data']['data'][0]['date'])) {
-            return $data['response']['data']['data'][0]['date'];
-        }
-
-        return null;
-    }
-
-    public function cleanupShow($showPath, $dryRun = null) {
-        if ($dryRun === null) {
-            $dryRun = $this->pluginConfig['reportOnly'];
-        }
-
-        if (!file_exists($showPath)) {
-            return ['error' => 'Show path does not exist'];
-        }
-
-        $filesToDelete = [];
-        $totalSize = 0;
-        
-        // Get all episode files sorted by modification time (newest first)
-        $episodes = [];
-        $dir = new RecursiveDirectoryIterator($showPath);
-        $iterator = new RecursiveIteratorIterator($dir);
-        foreach ($iterator as $file) {
-            if ($file->isFile() && in_array($file->getExtension(), ['mkv', 'mp4', 'avi'])) {
-                $episodes[] = [
-                    'path' => $file->getPathname(),
-                    'mtime' => $file->getMTime(),
-                    'size' => $file->getSize()
-                ];
-            }
-        }
-
-        // Sort episodes by modification time (newest first)
-        usort($episodes, function($a, $b) {
-            return $b['mtime'] - $a['mtime'];
-        });
-
-        // Mark episodes for deletion, keeping the newest N episodes
-        for ($i = $this->pluginConfig['tvShowsEpisodeCount']; $i < count($episodes); $i++) {
-            $filesToDelete[] = $episodes[$i]['path'];
-            $totalSize += $episodes[$i]['size'];
-        }
-
-        // If not a dry run and not prompting, or if prompting and user confirmed, delete the files
-        if (!$dryRun) {
-            if (!$this->pluginConfig['promptForFolderDeletion'] || $this->confirmDeletion($showPath, $filesToDelete, $totalSize)) {
-                foreach ($filesToDelete as $file) {
-                    unlink($file);
-                }
-            }
-        }
-
-        return [
-            'filesToDelete' => $filesToDelete,
-            'totalSize' => $totalSize,
-            'dryRun' => $dryRun
-        ];
-    }
-
-    private function confirmDeletion($showPath, $files, $size) {
-        // In a web context, this would typically be handled via an API endpoint
-        // that would show the confirmation dialog in the UI
-        return true;
     }
 }
 
