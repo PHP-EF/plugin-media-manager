@@ -60,7 +60,7 @@ class plextvcleaner extends ib {
             'Sonarr Settings' => array(
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('input', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
-                $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Report Only Mode (No Deletions)', 'options' => array(array("name" => 'v1', "value" => 'v1'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v3', "value" => 'v3'))]),
+                $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v1', "value" => 'v1'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v3', "value" => 'v3'))]),
             ),
             'Cleanup Settings' => array(
                 $this->settingsOption('input', 'episodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
