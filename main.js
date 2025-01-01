@@ -10,6 +10,7 @@ function convertEpochToGMT(epochTime) {
 function tautulliResponseHandler(response) {
     const data = response.data;
     if (response.result == "Success") {
+        data.sort((a, b) => b.last_played - a.last_played);
         const totalShows = data.length;
         const recentShows = data.filter(row => {
             const lastPlayedDate = new Date(row.last_played * 1000); // Convert epoch to date
