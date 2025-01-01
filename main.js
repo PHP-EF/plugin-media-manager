@@ -1,3 +1,45 @@
+function convertEpochToGMT(epochTime) {
+    // Create a new Date object using the epoch time (in milliseconds)
+    const date = new Date(epochTime * 1000);
+
+    // Convert the date to a GMT string
+    return date.toGMTString();
+}
+
+// Tautulli Bootstrap Table Response Handler
+function tautulliResponseHandler(data) {
+    if (data.result == "Success") {
+        const totalShows = data.data.data.length;
+        const recentShows = data.data.data.filter(row => {
+            const lastPlayedDate = new Date(row.last_played * 1000); // Convert epoch to date
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            return lastPlayedDate >= ninetyDaysAgo;
+        }).length;
+
+        $('#recentlyWatched').text(recentShows);
+        $('#totalShows').text(totalShows);
+        return data.data.data;
+    } else {
+        toast("Error", "", data.message, "danger", "30000");
+    }
+}
+
+// Tautulli Last Watched Date Formatter
+function tautulliLastWatchedFormatter(value, row, index) {
+    if (row.last_played) {
+        return convertEpochToGMT(row.last_played);
+    } else {
+        return 'Never';
+    }
+}
+
+// Initate TV Shows Table
+$("#tvShowsTable").bootstrapTable();
+
+
+// ** OLD STUFF ** //
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     refreshTVShows();
