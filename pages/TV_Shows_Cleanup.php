@@ -54,7 +54,7 @@ return '
                 <div class="card-body info-box bg-warning">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                            <i class="fas fa-check mb-2"></i>&nbsp;
+                            <i class="fas fa-clock mb-2"></i>&nbsp;
                             <h5 class="card-title">Cleanup Pending: </h5>
                         </div>
                         <div class="pt-1 ps-3">
@@ -70,7 +70,7 @@ return '
                 <div class="card-body info-box bg-danger">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                            <i class="fas fa-check mb-2"></i>&nbsp;
+                            <i class="fas fa-trash mb-2"></i>&nbsp;
                             <h5 class="card-title">Space to Free: </h5>
                         </div>
                         <div class="pt-1 ps-3">
