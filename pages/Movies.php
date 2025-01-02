@@ -97,6 +97,8 @@ return '
                     data-show-filter-control-switch="true"
                     data-show-refresh="true"
                     data-show-columns="true"
+                    data-sort-name="last_played"
+                    data-sort-order="desc"
                     data-pagination="true"
                     data-side-pagination="server"
                     data-toolbar="#toolbar"
@@ -172,9 +174,4 @@ return '
         </div>
     </div>
 </div>
-
-<script>
-// Initate Movies Table
-$("#moviesTable").bootstrapTable();
-</script>
 ';

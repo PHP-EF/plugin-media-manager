@@ -79,3 +79,9 @@ function customQueryParams(params) {
         filter: params.filter
     };
 }
+
+// Initate TV Shows Table
+$("#tvShowsTable").bootstrapTable();
+
+// Initate Movies Table
+$("#moviesTable").bootstrapTable();
