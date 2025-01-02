@@ -233,7 +233,6 @@ class plextvcleaner extends ib {
             }
     
             // Update 'MatchStatus' to 'Orphaned' for shows not in $Shows but present in the database
-            // ** Could optionally have a setting to remove these orphaned tv shows as part of the regular sync
             try {
                 $removeOrphaned = $this->config->get('Plugins','Plex TV Cleaner')['removeOrphanedTVShows'] ?? false;
                 if ($removeOrphaned) {
