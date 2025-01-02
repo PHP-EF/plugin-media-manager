@@ -407,8 +407,8 @@ class MediaManager extends ib {
     public function updateMoviesTable() {
         $Movies = $this->queryAndMatchRadarrAndTautulli();
         if ($Movies) {
-            $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey, tags) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey, :tags)';
-            $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey, tags = :tags WHERE title = :title';
+            $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey, tags, clean) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey, :tags, :clean)';
+            $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey, tags = :tags, clean = :clean WHERE title = :title';
     
             // Track titles in $Movies
             $movieTitles = array_column($Movies, 'title');
@@ -426,6 +426,39 @@ class MediaManager extends ib {
                     } else {
                         // Insert new record
                         $stmt = $this->sql->prepare($InsertPrepare);
+                    }
+
+                    // Update 'clean' to true for movies that meet cleanup criteria
+                    try {
+                        // Default to false
+                        $Movie['clean'] = false;
+
+                        // Check if it has been added longer than X days ago
+                        $DateAdded = new DateTime($Movie['added']);
+                        $LastPlayedEpoch = false;
+                        if (isset($Movie['Tautulli'])) {
+                            if (isset($Movie['Tautulli']['last_played'])) {
+                                $LastPlayedEpoch = $Movie['Tautulli']['last_played'] ?? false;
+                            }
+                        }
+                        
+                        if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                            if ($LastPlayedEpoch) {
+                                // Check if it has been watched in longer than X days ago
+                                $LastPlayed = new DateTime("@$LastPlayedEpoch");
+                                if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                                    $Movie['clean'] = true;
+                                }
+                            } else {
+                                $Movie['clean'] = true;
+                            }
+                        }
+                    } catch (Exception $e) {
+                        $this->logging->writeLog("MediaManager","Failed to update cleanup status for Movies.","error",$e);
+                        return array(
+                            'result' => 'Error',
+                            'message' => $e
+                        );
                     }
     
                     // Bind parameters and execute
@@ -446,7 +479,8 @@ class MediaManager extends ib {
                         ':titleSlug' => $Movie['titleSlug'],
                         ':imdbId' => $Movie['imdbId'] ?? null,
                         ':ratingKey' => $Movie['Tautulli']['rating_key'] ?? null,
-                        ':tags' => implode(',',$Movie['tags']) ?? null
+                        ':tags' => implode(',',$Movie['tags']) ?? null,
+                        ':clean' => $Movie['clean'] ?? false
                     ]);
                 } catch (Exception $e) {
                     $this->logging->writeLog("MediaManager","Failed to update the Movies Table.","error",$e);

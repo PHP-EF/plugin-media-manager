@@ -121,6 +121,7 @@ return '
                         <th data-field="sizeOnDisk" data-sortable="true" data-formatter="sonarrSizeOnDiskFormatter" data-filter-control="input">Size</th>
                         <th data-field="seriesType" data-sortable="true" data-filter-control="input" data-visible="false">Series Type</th>
                         <th data-field="last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
+                        <th data-field="added" data-sortable="true" data-formatter="dateFormatter" data-filter-control="input" data-visible="false">Added</th>
                         <th data-field="play_count" data-sortable="true" data-filter-control="input">Play Count</th>
                         <th data-field="library" data-sortable="true" data-filter-control="select">Library</th>
                         <th data-field="library_id" data-sortable="true" data-filter-control="select" data-visible="false">Library ID</th>
