@@ -29,18 +29,28 @@ class MediaManager extends ib {
     }
 
     public function _pluginGetSettings() {
-        $tvExcludeFolders = [];
-        $moviesExcludeFolders = [];
-        if (!empty($this->pluginConfig['tvExcludeFolders'])) {
-            foreach ($this->pluginConfig['tvExcludeFolders'] as $folder) {
-                $tvExcludeFolders[] = $folder;
-            }
-        }
-        if (!empty($this->pluginConfig['moviesExcludeFolders'])) {
-            foreach ($this->pluginConfig['moviesExcludeFolders'] as $folder) {
-                $moviesExcludeFolders[] = $folder;
-            }
-        }
+        $SonarrTags = $this->getSonarrTags();
+        $RadarrTags = $this->getRadarrTags();
+        $AppendNone = array(
+            [
+                "name" => 'None',
+                "value" => ''
+            ]
+        );
+
+        $SonarrTagOptions = array_merge($AppendNone,array_map(function($item) {
+            return [
+                "name" => $item['label'],
+                "value" => $item['id']
+            ];
+        }, $SonarrTags));
+
+        $RadarrTagOptions = array_merge($AppendNone,array_map(function($item) {
+            return [
+                "name" => $item['label'],
+                "value" => $item['id']
+            ];
+        }, $RadarrTags));
 
         return array(
             'About' => array(
@@ -60,12 +70,20 @@ class MediaManager extends ib {
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password-alt', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
-                $this->settingsOption('input', 'sonarrEpisodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
+                // $this->settingsOption('hr'),
+                // $this->settingsOption('title', 'sonarrCleanupTitle', ['text' => 'Cleanup']),
                 $this->settingsOption('select', 'sonarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
                     ['name' => 'Yes', 'value' => 'true'],
                     ['name' => 'No', 'value' => 'false']
                 ]]),
-                $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $tvExcludeFolders, 'text' => 'Add'])
+                // $this->settingsOption('hr'),
+                // $this->settingsOption('title', 'sonarrThrottlingTitle', ['text' => 'Sonarr Throttling']),
+                $this->settingsOption('select', 'sonarrExclusionTag', ['label' => 'Tag to exclude TV Shows', 'options' => $SonarrTagOptions]),
+                $this->settingsOption('input', 'sonarrThrottlingSeasonThreshold', ['label' => 'Season Threshold', 'placeholder' => '4']),
+                $this->settingsOption('input', 'sonarrThrottlingEpisodeThreshold', ['label' => 'Episode Threshold', 'placeholder' => '40']),
+                $this->settingsOption('input', 'sonarrThrottlingEpisodeScanQty', ['label' => 'Amount of episodes to perform initial scan for', 'placeholder' => '10']),
+                $this->settingsOption('input', 'sonarrCleanupEpisodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '10']),
+                $this->settingsOption('input', 'sonarrCleanupMaxAge', ['label' => 'Maximum number of days before TV Show is cleaned up', 'placeholder' => '180'])
             ),
             'Radarr' => array(
                 $this->settingsOption('url', 'radarrUrl', ['label' => 'Radarr API URL', 'placeholder' => 'http://server:port']),
@@ -75,7 +93,8 @@ class MediaManager extends ib {
                     ['name' => 'Yes', 'value' => 'true'],
                     ['name' => 'No', 'value' => 'false']
                 ]]),
-                $this->settingsOption('input-multiple', 'moviesExcludeFolders', ['label' => 'Movies to Exclude', 'values' => $moviesExcludeFolders, 'text' => 'Add'])
+                $this->settingsOption('select', 'radarrExclusionTag', ['label' => 'Tag to exclude Movies', 'options' => $RadarrTagOptions]),
+                $this->settingsOption('input', 'radarrCleanupMaxAge', ['label' => 'Maximum number of days before Movie is cleaned up', 'placeholder' => '1095'])
             ),
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
@@ -98,8 +117,14 @@ class MediaManager extends ib {
         $this->pluginConfig['promptForFolderDeletion'] = $this->pluginConfig['promptForFolderDeletion'] ?? true;
         $this->pluginConfig['sonarrApiVersion'] = $this->pluginConfig['sonarrApiVersion'] ?? 'v3';
         $this->pluginConfig['sonarrReportOnly'] = $this->pluginConfig['sonarrReportOnly'] ?? true;
+        $this->pluginConfig['sonarrThrottlingSeasonThreshold'] = $this->pluginConfig['sonarrThrottlingSeasonThreshold'] ?? '4';
+        $this->pluginConfig['sonarrThrottlingEpisodeThreshold'] = $this->pluginConfig['sonarrThrottlingEpisodeThreshold'] ?? '40';
+        $this->pluginConfig['sonarrThrottlingEpisodeScanQty'] = $this->pluginConfig['sonarrThrottlingEpisodeScanQty'] ?? '10';
+        $this->pluginConfig['sonarrCleanupEpisodesToKeep'] = $this->pluginConfig['sonarrCleanupEpisodesToKeep'] ?? '10';
+        $this->pluginConfig['sonarrCleanupMaxAge'] = $this->pluginConfig['sonarrCleanupMaxAge'] ?? '180';
         $this->pluginConfig['radarrApiVersion'] = $this->pluginConfig['radarrApiVersion'] ?? 'v3';
         $this->pluginConfig['radarrReportOnly'] = $this->pluginConfig['radarrReportOnly'] ?? true;
+        $this->pluginConfig['radarrCleanupMaxAge'] = $this->pluginConfig['radarrCleanupMaxAge'] ?? '1095';
     }
 
     // Generic Get API Results Function, to be shared across any API Wrappers
@@ -192,7 +217,8 @@ class MediaManager extends ib {
             titleSlug TEXT,
             tvDbId INTEGER,
             ratingKey INTEGER,
-            tags TEXT
+            tags TEXT,
+            clean BOOLEAN
 		)");
 
         $this->sql->exec("CREATE TABLE IF NOT EXISTS movies (
@@ -213,7 +239,8 @@ class MediaManager extends ib {
             titleSlug TEXT,
             imdbId INTEGER,
             ratingKey INTEGER,
-            tags TEXT
+            tags TEXT,
+            clean BOOLEAN
         )");
 	}
 
@@ -221,8 +248,8 @@ class MediaManager extends ib {
     public function updateTVShowTable() {
         $Shows = $this->queryAndMatchSonarrAndTautulli();
         if ($Shows) {
-            $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodeFileCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey, tags) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodeFileCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey, :tags)';
-            $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodeFileCount = :episodeFileCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey, tags = :tags WHERE title = :title';
+            $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodeFileCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey, tags, clean) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodeFileCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey, :tags, :clean)';
+            $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodeFileCount = :episodeFileCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey, tags = :tags, clean = :clean WHERE title = :title';
     
             // Track titles in $Shows
             $showTitles = array_column($Shows, 'title');
@@ -240,6 +267,39 @@ class MediaManager extends ib {
                     } else {
                         // Insert new record
                         $stmt = $this->sql->prepare($InsertPrepare);
+                    }
+
+                    // Update 'clean' to true for shows that meet cleanup criteria
+                    try {
+                        // Default to false
+                        $Show['clean'] = false;
+
+                        // Check if it has been added longer than X days ago
+                        $DateAdded = new DateTime($Show['added']);
+                        $LastPlayedEpoch = false;
+                        if (isset($Show['Tautulli'])) {
+                            if (isset($Show['Tautulli']['last_played'])) {
+                                $LastPlayedEpoch = $Show['Tautulli']['last_played'] ?? false;
+                            }
+                        }
+                        
+                        if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+                            if ($LastPlayedEpoch) {
+                                // Check if it has been watched in longer than X days ago
+                                $LastPlayed = new DateTime("@$LastPlayedEpoch");
+                                if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+                                    $Show['clean'] = true;
+                                }
+                            } else {
+                                $Show['clean'] = true;
+                            }
+                        }
+                    } catch (Exception $e) {
+                        $this->logging->writeLog("MediaManager","Failed to update cleanup status for TV Shows.","error",$e);
+                        return array(
+                            'result' => 'Error',
+                            'message' => $e
+                        );
                     }
     
                     // Bind parameters and execute
@@ -264,7 +324,8 @@ class MediaManager extends ib {
                         ':titleSlug' => $Show['titleSlug'],
                         ':tvDbId' => $Show['tvdbId'],
                         ':ratingKey' => $Show['Tautulli']['rating_key'] ?? null,
-                        ':tags' => implode(',',$Show['tags']) ?? null
+                        ':tags' => implode(',',$Show['tags']) ?? null,
+                        ':clean' => $Show['clean'] ?? false
                     ]);
                 } catch (Exception $e) {
                     $this->logging->writeLog("MediaManager","Failed to update the TV Shows Table.","error",$e);
@@ -325,6 +386,21 @@ class MediaManager extends ib {
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['total'];
+    }
+
+    // Function to get TV Shows By Tag
+    public function getTVShowsTableByTag($TagID,$Type = 'include') {
+        switch($Type) {
+            case 'include':
+                $stmt = $this->sql->prepare("SELECT * FROM tvshows WHERE ',' || tags || ',' LIKE '%,' || '".$TagID."' || ',%';");
+                break;
+            case 'exclude':
+                $stmt = $this->sql->prepare("SELECT * FROM tvshows WHERE ',' || tags || ',' NOT LIKE '%,' || '".$TagID."' || ',%';");
+                break;
+        }
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
     }
     
     // Function to update the Movies Table (Synchronisation)
@@ -424,13 +500,31 @@ class MediaManager extends ib {
         return $this->dbHelper->queryDBWithParams($this->sql,'movies',$Params,$SearchColumns);
     }
 
-    // Function to get the total number of TV Shows
+    // Function to get the total number of Movies
     public function getTotalMovies() {
         $stmt = $this->sql->prepare('SELECT COUNT(*) as total FROM movies');
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['total'];
     }
+
+    // Function to get TV Shows By Tag
+    public function getMoviesTableByTag($TagID,$Type = 'include') {
+        switch($Type) {
+            case 'include':
+                $stmt = $this->sql->prepare("SELECT * FROM movies WHERE ',' || tags || ',' LIKE '%,' || '".$TagID."' || ',%';");
+                break;
+            case 'exclude':
+                $stmt = $this->sql->prepare("SELECT * FROM movies WHERE ',' || tags || ',' NOT LIKE '%,' || '".$TagID."' || ',%';");
+                break;
+        }
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
+    }
+
+
+    
     
 
 
@@ -565,6 +659,12 @@ class MediaManager extends ib {
     private function normalizeTitle($title) {
         // Remove special characters and convert to lowercase
         return strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $title));
+    }
+
+    private function isDateOlderThanXDays($date, $days) {
+        $currentDate = new DateTime();
+        $interval = $currentDate->diff($date);
+        return $interval->days > $days;
     }
 
     // **

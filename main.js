@@ -69,6 +69,14 @@ function radarrDownloadStatusFormatter(value, row, index) {
     }
 }
 
+function cleanupFormatter(value, row, index) {
+    if (row.clean) {
+        return '<span class="badge bg-warning">Cleanup Pending</span></h1>';
+    } else {
+        return '<span class="badge bg-secondary">No Cleanup</span></h1>';
+    }
+}
+
 function customQueryParams(params) {
     return {
         limit: params.limit,

@@ -124,6 +124,7 @@ return '
                         <th data-field="play_count" data-sortable="true" data-filter-control="input">Play Count</th>
                         <th data-field="library" data-sortable="true" data-filter-control="select">Library</th>
                         <th data-field="library_id" data-sortable="true" data-filter-control="select" data-visible="false">Library ID</th>
+                        <th data-field="clean" data-sortable="true" data-filter-control="select" data-formatter="cleanupFormatter" >Cleanup</th>
                     </tr>
                     </thead>
                 </table>
