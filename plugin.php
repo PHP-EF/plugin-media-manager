@@ -9,7 +9,7 @@ $GLOBALS['plugins']['Plex TV Cleaner'] = [
     'author' => 'tinytechlabuk',
     'category' => 'Media Management',
     'link' => 'https://github.com/tinytechlabuk/php-ef-plex-tv-cleaner',
-    'version' => '1.0.4',
+    'version' => '1.0.5',
     'image' => 'logo.png',
     'settings' => true,
     'api' => '/api/plugin/plextvcleaner/settings',
@@ -45,19 +45,16 @@ class plextvcleaner extends ib {
             'Plugin' => array(
                 $this->settingsOption('auth', 'ACL-PLEXTVCLEANER', ['label' => 'Plex TV Cleaner Plugin Access ACL'])
             ),
-            'TV Shows' => array(
-                $this->settingsOption('input', 'tvRootFolder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV']),
-                $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
-            ),
             'Tautulli' => array(
                 $this->settingsOption('url', 'tautulliUrl', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port']),
-                $this->settingsOption('input', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('password-alt', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('input', 'tautulliMonths', ['label' => 'Months to Look Back', 'placeholder' => '12'])
             ),
             'Sonarr' => array(
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
-                $this->settingsOption('input', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('password-alt', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v1', "value" => 'v1'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v3', "value" => 'v3'))]),
+                $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
             ),
             'Cleanup' => array(
                 $this->settingsOption('input', 'episodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
