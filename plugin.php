@@ -70,7 +70,8 @@ class plextvcleaner extends ib {
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
                 $this->settingsOption('cron', 'sonarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
-                $this->settingsOption('test', '/api/plugin/plextvcleaner/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST'])
+                $this->settingsOption('test', '/api/plugin/plextvcleaner/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
+                $this->settingsOption('checkbox', 'removeOrphanedTVShows', ['label' => 'Remove Orphaned Shows on Sync'])
             )
         );
     }
@@ -181,14 +182,17 @@ class plextvcleaner extends ib {
         if ($Shows) {
             $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey)';
             $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey WHERE title = :title';
-        
+    
+            // Track titles in $Shows
+            $showTitles = array_column($Shows, 'title');
+    
             foreach ($Shows as $Show) {
                 try {
                     // Check if the show exists
                     $stmt = $this->sql->prepare('SELECT COUNT(*) FROM tvshows WHERE title = :title');
                     $stmt->execute([':title' => $Show['title']]);
                     $exists = $stmt->fetchColumn();
-            
+    
                     if ($exists) {
                         // Update existing record
                         $stmt = $this->sql->prepare($UpdatePrepare);
@@ -196,7 +200,7 @@ class plextvcleaner extends ib {
                         // Insert new record
                         $stmt = $this->sql->prepare($InsertPrepare);
                     }
-            
+    
                     // Bind parameters and execute
                     $stmt->execute([
                         ':title' => $Show['title'],
@@ -227,7 +231,26 @@ class plextvcleaner extends ib {
                     );
                 }
             }
-
+    
+            // Update 'MatchStatus' to 'Orphaned' for shows not in $Shows but present in the database
+            // ** Could optionally have a setting to remove these orphaned tv shows as part of the regular sync
+            try {
+                $removeOrphaned = $this->config->get('Plugins','Plex TV Cleaner')['removeOrphanedTVShows'] ?? false;
+                if ($removeOrphaned) {
+                    $stmt = $this->sql->prepare('DELETE FROM tvshows WHERE title NOT IN (' . implode(',', array_fill(0, count($showTitles), '?')) . ')');
+                    $stmt->execute($showTitles);
+                } else {
+                    $stmt = $this->sql->prepare('UPDATE tvshows SET matchStatus = "Orphaned" WHERE title NOT IN (' . implode(',', array_fill(0, count($showTitles), '?')) . ')');
+                    $stmt->execute($showTitles);
+                }
+            } catch (Exception $e) {
+                $this->logging->writeLog("PlexTVCleaner","Failed to update orphaned TV Shows.","error",$e);
+                return array(
+                    'result' => 'Error',
+                    'message' => $e
+                );
+            }
+    
             $this->logging->writeLog("PlexTVCleaner","Synchronised with Sonarr & Tautulli Successfully.","info");
             return array(
                 'result' => 'Success',
