@@ -114,8 +114,9 @@ return '
                         <th data-field="monitored" data-sortable="true" data-filter-control="select" data-visible="false">Monitored</th>
                         <th data-field="status" data-sortable="true" data-filter-control="select">Show Status</th>
                         <th data-field="matchStatus" data-sortable="true" data-filter-control="select" data-visible="false">Match Status</th>
-                        <th data-field="seasonCount" data-sortable="true" data-filter-control="input">Season Count</th>
-                        <th data-field="episodeCount" data-sortable="true" data-filter-control="input">Episode Count</th>
+                        <th data-field="seasonCount" data-sortable="true" data-filter-control="input">Seasons Monitored</th>
+                        <th data-field="episodeCount" data-sortable="true" data-filter-control="input" data-visible="false">Episodes Monitored</th>
+                        <th data-field="episodeFileCount" data-sortable="true" data-filter-control="input" data-visible="false">Episodes Downloaded</th>
                         <th data-field="episodesDownloadedPercentage" data-sortable="true" data-formatter="sonarrEpisodeProgressFormatter" data-filter-control="input">Episodes Downloaded</th>
                         <th data-field="sizeOnDisk" data-sortable="true" data-formatter="sonarrSizeOnDiskFormatter" data-filter-control="input">Size</th>
                         <th data-field="seriesType" data-sortable="true" data-filter-control="input" data-visible="false">Series Type</th>

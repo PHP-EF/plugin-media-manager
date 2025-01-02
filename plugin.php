@@ -29,10 +29,16 @@ class MediaManager extends ib {
     }
 
     public function _pluginGetSettings() {
-        $excludeFolders = [];
-        if (!empty($this->pluginConfig['excludeFolders'])) {
-            foreach ($this->pluginConfig['excludeFolders'] as $folder) {
-                $excludeFolders[] = $folder;
+        $tvExcludeFolders = [];
+        $moviesExcludeFolders = [];
+        if (!empty($this->pluginConfig['tvExcludeFolders'])) {
+            foreach ($this->pluginConfig['tvExcludeFolders'] as $folder) {
+                $tvExcludeFolders[] = $folder;
+            }
+        }
+        if (!empty($this->pluginConfig['moviesExcludeFolders'])) {
+            foreach ($this->pluginConfig['moviesExcludeFolders'] as $folder) {
+                $moviesExcludeFolders[] = $folder;
             }
         }
 
@@ -54,24 +60,22 @@ class MediaManager extends ib {
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password-alt', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
-                $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
+                $this->settingsOption('input', 'sonarrEpisodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
+                $this->settingsOption('select', 'sonarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
+                    ['name' => 'Yes', 'value' => 'true'],
+                    ['name' => 'No', 'value' => 'false']
+                ]]),
+                $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $tvExcludeFolders, 'text' => 'Add'])
             ),
             'Radarr' => array(
                 $this->settingsOption('url', 'radarrUrl', ['label' => 'Radarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password-alt', 'radarrApiKey', ['label' => 'Radarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'radarrApiVersion', ['label' => 'Radarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
-                $this->settingsOption('input-multiple', 'moviesExcludeFolders', ['label' => 'Movies to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
-            ),
-            'Cleanup' => array(
-                $this->settingsOption('input', 'episodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
-                $this->settingsOption('select', 'reportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
+                $this->settingsOption('select', 'radarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
                     ['name' => 'Yes', 'value' => 'true'],
                     ['name' => 'No', 'value' => 'false']
                 ]]),
-                $this->settingsOption('select', 'Prompt For Folder Deletion', ['label' => 'Prompt Before Folder Deletion', 'options' => [
-                    ['name' => 'Yes', 'value' => 'true'],
-                    ['name' => 'No', 'value' => 'false']
-                ]])
+                $this->settingsOption('input-multiple', 'moviesExcludeFolders', ['label' => 'Movies to Exclude', 'values' => $moviesExcludeFolders, 'text' => 'Add'])
             ),
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
@@ -91,10 +95,11 @@ class MediaManager extends ib {
         $this->pluginConfig = $this->config->get('Plugins', 'Media Manager');
         $this->pluginConfig['tautulliMonths'] = $this->pluginConfig['tautulliMonths'] ?? 12;
         $this->pluginConfig['episodesToKeep'] = $this->pluginConfig['episodesToKeep'] ?? 3;
-        $this->pluginConfig['reportOnly'] = $this->pluginConfig['reportOnly'] ?? true;
         $this->pluginConfig['promptForFolderDeletion'] = $this->pluginConfig['promptForFolderDeletion'] ?? true;
         $this->pluginConfig['sonarrApiVersion'] = $this->pluginConfig['sonarrApiVersion'] ?? 'v3';
+        $this->pluginConfig['sonarrReportOnly'] = $this->pluginConfig['sonarrReportOnly'] ?? true;
         $this->pluginConfig['radarrApiVersion'] = $this->pluginConfig['radarrApiVersion'] ?? 'v3';
+        $this->pluginConfig['radarrReportOnly'] = $this->pluginConfig['radarrReportOnly'] ?? true;
     }
 
     // Generic Get API Results Function, to be shared across any API Wrappers
@@ -173,6 +178,7 @@ class MediaManager extends ib {
 			matchStatus TEXT,
 			seasonCount INTEGER,
 			episodeCount INTEGER,
+            episodeFileCount INTEGER,
 			episodesDownloadedPercentage INTEGER,
             sizeOnDisk INTEGER,
             seriesType TEXT,
@@ -185,7 +191,8 @@ class MediaManager extends ib {
             rootFolder TEXT,
             titleSlug TEXT,
             tvDbId INTEGER,
-            ratingKey INTEGER
+            ratingKey INTEGER,
+            tags TEXT
 		)");
 
         $this->sql->exec("CREATE TABLE IF NOT EXISTS movies (
@@ -205,7 +212,8 @@ class MediaManager extends ib {
             rootFolder TEXT,
             titleSlug TEXT,
             imdbId INTEGER,
-            ratingKey INTEGER
+            ratingKey INTEGER,
+            tags TEXT
         )");
 	}
 
@@ -213,8 +221,8 @@ class MediaManager extends ib {
     public function updateTVShowTable() {
         $Shows = $this->queryAndMatchSonarrAndTautulli();
         if ($Shows) {
-            $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey)';
-            $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey WHERE title = :title';
+            $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodeFileCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey, tags) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodeFileCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey, :tags)';
+            $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodeFileCount = :episodeFileCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey, tags = :tags WHERE title = :title';
     
             // Track titles in $Shows
             $showTitles = array_column($Shows, 'title');
@@ -242,6 +250,7 @@ class MediaManager extends ib {
                         ':matchStatus' => $Show['MatchStatus'],
                         ':seasonCount' => $Show['statistics']['seasonCount'],
                         ':episodeCount' => $Show['statistics']['episodeCount'],
+                        ':episodeFileCount' => $Show['statistics']['episodeFileCount'],
                         ':episodesDownloadedPercentage' => $Show['statistics']['percentOfEpisodes'],
                         ':sizeOnDisk' => $Show['statistics']['sizeOnDisk'],
                         ':seriesType' => $Show['seriesType'],
@@ -254,7 +263,8 @@ class MediaManager extends ib {
                         ':rootFolder' => $Show['rootFolderPath'],
                         ':titleSlug' => $Show['titleSlug'],
                         ':tvDbId' => $Show['tvdbId'],
-                        ':ratingKey' => $Show['Tautulli']['rating_key'] ?? null
+                        ':ratingKey' => $Show['Tautulli']['rating_key'] ?? null,
+                        ':tags' => implode(',',$Show['tags']) ?? null
                     ]);
                 } catch (Exception $e) {
                     $this->logging->writeLog("MediaManager","Failed to update the TV Shows Table.","error",$e);
@@ -321,8 +331,8 @@ class MediaManager extends ib {
     public function updateMoviesTable() {
         $Movies = $this->queryAndMatchRadarrAndTautulli();
         if ($Movies) {
-            $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey)';
-            $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey WHERE title = :title';
+            $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey, tags) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey, :tags)';
+            $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey, tags = :tags WHERE title = :title';
     
             // Track titles in $Movies
             $movieTitles = array_column($Movies, 'title');
@@ -359,7 +369,8 @@ class MediaManager extends ib {
                         ':rootFolder' => $Movie['rootFolderPath'],
                         ':titleSlug' => $Movie['titleSlug'],
                         ':imdbId' => $Movie['imdbId'] ?? null,
-                        ':ratingKey' => $Movie['Tautulli']['rating_key'] ?? null
+                        ':ratingKey' => $Movie['Tautulli']['rating_key'] ?? null,
+                        ':tags' => implode(',',$Movie['tags']) ?? null
                     ]);
                 } catch (Exception $e) {
                     $this->logging->writeLog("MediaManager","Failed to update the Movies Table.","error",$e);
@@ -583,6 +594,11 @@ class MediaManager extends ib {
         return $Result;
     }
 
+    public function getSonarrTags() {
+        $Result = $this->querySonarrAPI('GET','tag');
+        return $Result;
+    }
+
     // **
     // RADARR
     // **
@@ -607,6 +623,11 @@ class MediaManager extends ib {
     // Function to query list of movies from Radarr
     public function getRadarrMovies() {
         $Result = $this->queryRadarrAPI('GET','movie');
+        return $Result;
+    }
+
+    public function getRadarrTags() {
+        $Result = $this->queryRadarrAPI('GET','tag');
         return $Result;
     }
 

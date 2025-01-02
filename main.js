@@ -57,7 +57,7 @@ function sonarrSizeOnDiskFormatter(value, row, index) {
 function sonarrEpisodeProgressFormatter(value, row, index) {
     if (row.episodesDownloadedPercentage) {
         var percentage = row.episodesDownloadedPercentage.toFixed(2);
-        return '<div class="progress"><div class="progress-bar bg-info" role="progressbar" style="width: '+percentage+'%" aria-valuenow="'+percentage+'" aria-valuemin="0" aria-valuemax="100">'+percentage+'%</div></div>';
+        return '<div class="progress"><div class="progress-bar bg-default" role="progressbar" style="width: '+percentage+'%" aria-valuenow="'+percentage+'" aria-valuemin="0" aria-valuemax="100">'+percentage+'%  ('+row.episodeFileCount+'/'+row.episodeCount+')</div></div>';
     }
 }
 
