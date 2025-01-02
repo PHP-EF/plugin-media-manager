@@ -10,23 +10,23 @@ return '
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">TV Shows</h3>
+                    <h3 class="card-title">Movies</h3>
                 </div>
             </div>
         </div>
     </div>
     <div class="row m-1">
-        <!-- TV Shows Card -->
+        <!-- Movies Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
-            <div class="card info-card tv-shows-card">
+            <div class="card info-card movies-card">
                 <div class="card-body info-box bg-info">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                             <i class="fas fa-tv mb-2"></i>&nbsp;
-                            <h5 class="card-title">TV Shows: </h5>
+                            <h5 class="card-title">Movies: </h5>
                         </div>
                         <div class="pt-1 ps-3">
-                            <h6 id="totalShows" class="metric-circle border-5">N/A</h6>
+                            <h6 id="totalMovies" class="metric-circle border-5">N/A</h6>
                         </div>
                     </div>
                 </div>
@@ -34,7 +34,7 @@ return '
         </div>
         <!-- Recently Watched Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
-            <div class="card info-card tv-shows-card">
+            <div class="card info-card movies-card">
                 <div class="card-body info-box bg-success">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
@@ -50,7 +50,7 @@ return '
         </div>
         <!-- Cleanup Pending Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
-            <div class="card info-card tv-shows-card">
+            <div class="card info-card movies-card">
                 <div class="card-body info-box bg-warning">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
@@ -66,7 +66,7 @@ return '
         </div>
         <!-- Space To Free Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
-            <div class="card info-card tv-shows-card">
+            <div class="card info-card movies-card">
                 <div class="card-body info-box bg-danger">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
@@ -82,14 +82,14 @@ return '
         </div>
     </div>
     <div class="row m-3">
-        <!-- TV Shows List -->
+        <!-- Movies List -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">TV Shows</h3>
+                <h3 class="card-title">Movies</h3>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                <table data-url="/api/plugin/mediamanager/combined/tvshows"
+                <table data-url="/api/plugin/mediamanager/combined/movies"
                     data-toggle="table"
                     data-search="true"
                     data-filter-control="true"
@@ -103,7 +103,7 @@ return '
                     data-page-size="25"
                     data-query-params="customQueryParams"
                     data-response-handler="tautulliResponseHandler"
-                    class="table table-striped" id="tvShowsTable">
+                    class="table table-striped" id="moviesTable">
 
                     <thead>
                     <tr>
@@ -112,12 +112,9 @@ return '
                         <th data-field="monitored" data-sortable="true" data-filter-control="select" data-visible="false">Monitored</th>
                         <th data-field="status" data-sortable="true" data-filter-control="select">Show Status</th>
                         <th data-field="matchStatus" data-sortable="true" data-filter-control="select" data-visible="false">Match Status</th>
-                        <th data-field="seasonCount" data-sortable="true" data-filter-control="input">Season Count</th>
-                        <th data-field="episodeCount" data-sortable="true" data-filter-control="input">Episode Count</th>
-                        <th data-field="episodesDownloadedPercentage" data-sortable="true" data-formatter="sonarrEpisodeProgressFormatter" data-filter-control="input">Episodes Downloaded</th>
                         <th data-field="sizeOnDisk" data-sortable="true" data-formatter="sonarrSizeOnDiskFormatter" data-filter-control="input">Size</th>
-                        <th data-field="seriesType" data-sortable="true" data-filter-control="input" data-visible="false">Series Type</th>
                         <th data-field="last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
+                        <th data-field="hasFile" data-sortable="true" data-formatter="radarrDownloadStatusFormatter" data-filter-control="select">Download Status</th>
                         <th data-field="play_count" data-sortable="true" data-filter-control="input">Play Count</th>
                         <th data-field="library" data-sortable="true" data-filter-control="select">Library</th>
                         <th data-field="library_id" data-sortable="true" data-filter-control="select" data-visible="false">Library ID</th>
@@ -177,7 +174,7 @@ return '
 </div>
 
 <script>
-// Initate TV Shows Table
-$("#tvShowsTable").bootstrapTable();
+// Initate Movies Table
+$("#moviesTable").bootstrapTable();
 </script>
 ';

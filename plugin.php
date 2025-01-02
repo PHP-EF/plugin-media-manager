@@ -12,7 +12,7 @@ $GLOBALS['plugins']['Media Manager'] = [
     'version' => '1.0.5',
     'image' => 'logo.png',
     'settings' => true,
-    'api' => '/api/plugin/MediaManager/settings',
+    'api' => '/api/plugin/mediamanager/settings',
 ];
 
 class MediaManager extends ib {
@@ -53,8 +53,14 @@ class MediaManager extends ib {
             'Sonarr' => array(
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password-alt', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
-                $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v1', "value" => 'v1'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v3', "value" => 'v3'))]),
+                $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
                 $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
+            ),
+            'Radarr' => array(
+                $this->settingsOption('url', 'radarrUrl', ['label' => 'Radarr API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('password-alt', 'radarrApiKey', ['label' => 'Radarr API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('select', 'radarrApiVersion', ['label' => 'Radarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
+                $this->settingsOption('input-multiple', 'moviesExcludeFolders', ['label' => 'Movies to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
             ),
             'Cleanup' => array(
                 $this->settingsOption('input', 'episodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
@@ -68,10 +74,15 @@ class MediaManager extends ib {
                 ]])
             ),
             'Cron Jobs' => array(
-                $this->settingsOption('title', 'sectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
+                $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
                 $this->settingsOption('cron', 'sonarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
-                $this->settingsOption('test', '/api/plugin/MediaManager/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
-                $this->settingsOption('checkbox', 'removeOrphanedTVShows', ['label' => 'Remove Orphaned Shows on Sync'])
+                $this->settingsOption('test', '/api/plugin/mediamanager/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
+                $this->settingsOption('checkbox', 'removeOrphanedTVShows', ['label' => 'Remove Orphaned Shows on Sync']),
+                $this->settingsOption('blank'),
+                $this->settingsOption('title', 'radarrSectionTitle', ['text' => 'Radarr & Tautulli Synchronisation']),
+                $this->settingsOption('cron', 'radarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
+                $this->settingsOption('test', '/api/plugin/mediamanager/combined/movies/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
+                $this->settingsOption('checkbox', 'removeOrphanedMovies', ['label' => 'Remove Orphaned Movies on Sync'])
             )
         );
     }
@@ -82,6 +93,8 @@ class MediaManager extends ib {
         $this->pluginConfig['episodesToKeep'] = $this->pluginConfig['episodesToKeep'] ?? 3;
         $this->pluginConfig['reportOnly'] = $this->pluginConfig['reportOnly'] ?? true;
         $this->pluginConfig['promptForFolderDeletion'] = $this->pluginConfig['promptForFolderDeletion'] ?? true;
+        $this->pluginConfig['sonarrApiVersion'] = $this->pluginConfig['sonarrApiVersion'] ?? 'v3';
+        $this->pluginConfig['radarrApiVersion'] = $this->pluginConfig['radarrApiVersion'] ?? 'v3';
     }
 
     // Generic Get API Results Function, to be shared across any API Wrappers
@@ -91,7 +104,6 @@ class MediaManager extends ib {
         } else {
             $Result = $this->api->query->$Method($Url,$Data,null,null,true);
         }
-
         if (isset($Result->status_code)) {
             if ($Result->status_code >= 400 && $Result->status_code < 600) {
                 switch($Result->status_code) {
@@ -133,10 +145,10 @@ class MediaManager extends ib {
 		if ($this->sql) {
 			try {
 				// Query to check if both tables exist
-				$result = $this->sql->query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tvshows')");
+				$result = $this->sql->query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tvshows','movies')");
 				$tables = $result->fetchAll(PDO::FETCH_COLUMN);
 			
-				if (in_array('tvshows', $tables)) {
+				if (in_array('tvshows', $tables) && in_array('movies', $tables)) {
 					return true;
 				} else {
 					$this->createMediaManagerTables();
@@ -175,8 +187,29 @@ class MediaManager extends ib {
             tvDbId INTEGER,
             ratingKey INTEGER
 		)");
+
+        $this->sql->exec("CREATE TABLE IF NOT EXISTS movies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT UNIQUE,
+            monitored BOOLEAN,
+            status TEXT,
+            matchStatus TEXT,
+            hasFile BOOLEAN,
+            sizeOnDisk INTEGER,
+            last_played INTEGER,
+            added TEXT,
+            play_count INTEGER,
+            library TEXT,
+            library_id INTEGER,
+            path TEXT,
+            rootFolder TEXT,
+            titleSlug TEXT,
+            imdbId INTEGER,
+            ratingKey INTEGER
+        )");
 	}
 
+    // Function to update the TV Shows Table (Synchronisation)
     public function updateTVShowTable() {
         $Shows = $this->queryAndMatchSonarrAndTautulli();
         if ($Shows) {
@@ -260,6 +293,7 @@ class MediaManager extends ib {
         }
     }
 
+    // Function to get the TV Shows Table
     public function getTVShowsTable($Params) {
         // Searching
         if (!empty($params['search'])) {
@@ -275,13 +309,118 @@ class MediaManager extends ib {
         return $this->dbHelper->queryDBWithParams($this->sql,'tvshows',$Params,$SearchColumns);
     }
 
+    // Function to get the total number of TV Shows
     public function getTotalTVShows() {
         $stmt = $this->sql->prepare('SELECT COUNT(*) as total FROM tvshows');
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['total'];
     }
+    
+    // Function to update the Movies Table (Synchronisation)
+    public function updateMoviesTable() {
+        $Movies = $this->queryAndMatchRadarrAndTautulli();
+        if ($Movies) {
+            $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey)';
+            $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey WHERE title = :title';
+    
+            // Track titles in $Movies
+            $movieTitles = array_column($Movies, 'title');
+    
+            foreach ($Movies as $Movie) {
+                try {
+                    // Check if the show exists
+                    $stmt = $this->sql->prepare('SELECT COUNT(*) FROM movies WHERE title = :title');
+                    $stmt->execute([':title' => $Movie['title']]);
+                    $exists = $stmt->fetchColumn();
+    
+                    if ($exists) {
+                        // Update existing record
+                        $stmt = $this->sql->prepare($UpdatePrepare);
+                    } else {
+                        // Insert new record
+                        $stmt = $this->sql->prepare($InsertPrepare);
+                    }
+    
+                    // Bind parameters and execute
+                    $stmt->execute([
+                        ':title' => $Movie['title'],
+                        ':monitored' => $Movie['monitored'],
+                        ':status' => $Movie['status'],
+                        ':matchStatus' => $Movie['MatchStatus'],
+                        ':hasFile' => $Movie['hasFile'],
+                        ':sizeOnDisk' => $Movie['statistics']['sizeOnDisk'],
+                        ':last_played' => $Movie['Tautulli']['last_played'] ?? null,
+                        ':added' => $Movie['added'],
+                        ':play_count' => $Movie['Tautulli']['play_count'] ?? null,
+                        ':library' => $Movie['Tautulli']['library_name'] ?? null,
+                        ':library_id' => $Movie['Tautulli']['section_id'] ?? null,
+                        ':path' => $Movie['path'],
+                        ':rootFolder' => $Movie['rootFolderPath'],
+                        ':titleSlug' => $Movie['titleSlug'],
+                        ':imdbId' => $Movie['imdbId'] ?? null,
+                        ':ratingKey' => $Movie['Tautulli']['rating_key'] ?? null
+                    ]);
+                } catch (Exception $e) {
+                    $this->logging->writeLog("MediaManager","Failed to update the Movies Table.","error",$e);
+                    return array(
+                        'result' => 'Error',
+                        'message' => $e
+                    );
+                }
+            }
+    
+            // Update 'MatchStatus' to 'Orphaned' for shows not in $Shows but present in the database
+            try {
+                $removeOrphaned = $this->config->get('Plugins','Media Manager')['removeOrphanedMovies'] ?? false;
+                if ($removeOrphaned) {
+                    $stmt = $this->sql->prepare('DELETE FROM movies WHERE title NOT IN (' . implode(',', array_fill(0, count($movieTitles), '?')) . ')');
+                    $stmt->execute($movieTitles);
+                } else {
+                    $stmt = $this->sql->prepare('UPDATE movies SET matchStatus = "Orphaned" WHERE title NOT IN (' . implode(',', array_fill(0, count($movieTitles), '?')) . ')');
+                    $stmt->execute($movieTitles);
+                }
+            } catch (Exception $e) {
+                $this->logging->writeLog("MediaManager","Failed to update orphaned Movies.","error",$e);
+                return array(
+                    'result' => 'Error',
+                    'message' => $e
+                );
+            }
+    
+            $this->logging->writeLog("MediaManager","Synchronised with Radarr & Tautulli Successfully.","info");
+            return array(
+                'result' => 'Success',
+                'message' => 'Successfully updated Movies Table.'
+            );
+        } else {
+            $this->logging->writeLog("MediaManager","Failed to retrieve a list of Movies.","error");
+        }
+    }
 
+    // Function to get the Movies Table
+    public function getMoviesTable($Params) {
+        // Searching
+        if (!empty($params['search'])) {
+            $query .= ' AND (title LIKE :search OR status LIKE :search)';
+        }
+        $SearchColumns = [
+            'title',
+            'status',
+            'matchStatus',
+            'library'
+        ];
+        return $this->dbHelper->queryDBWithParams($this->sql,'movies',$Params,$SearchColumns);
+    }
+
+    // Function to get the total number of TV Shows
+    public function getTotalMovies() {
+        $stmt = $this->sql->prepare('SELECT COUNT(*) as total FROM movies');
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+    
 
 
     // **
@@ -343,6 +482,7 @@ class MediaManager extends ib {
         return $unwatched_shows;
     }
 
+    // Get a list of TV Shows from Tautulli
     public function getTautulliTVShows() {
         $Libraries = $this->getTautulliLibraries();
         if ($Libraries) {
@@ -368,29 +508,39 @@ class MediaManager extends ib {
         }  
     }
 
-
-    // **
-    // SONARR
-    // **
-    // Sonarr API Wrapper
-    public function querySonarrAPI($Method, $Uri, $Data = "") {
-        if (!$this->pluginConfig['sonarrUrl']) {
-            $this->api->setAPIResponse('Error','Sonarr URL Missing');
-            return false;
-        }
-
-        if (!$this->pluginConfig['sonarrApiKey']) {
-            $this->api->setAPIResponse('Error','Sonarr API Key Missing');
-            return false;
-        }
-
-        $Url = $this->pluginConfig['sonarrUrl']."/api/".$this->pluginConfig['sonarrApiVersion']."/".$Uri;
-        $Url = $Url.'?apikey='.$this->pluginConfig['sonarrApiKey'];
-        return $this->getAPIResults($Method,$Url,$Data);
+    // Get a list of Movies from Tautulli
+    public function getTautulliMovies() {
+        $Libraries = $this->getTautulliLibraries();
+        if ($Libraries) {
+            $MovieLibraries = array_filter($Libraries, function($Library) {
+                return $Library['section_type'] == 'movie';
+            });
+            $Results = array();
+            foreach ($MovieLibraries as $MovieLibrary) {
+                $Params = array(
+                    'section_id' => $MovieLibrary['section_id'],
+                    'length' => 10000
+                );
+                $Result = $this->getTautulliMediaFromLibrary($Params);
+                
+                if (is_array($Result)) {
+                    foreach ($Result['data'] as &$item) {
+                        $item['library_name'] = $MovieLibrary['section_name']; // Add library name to each item
+                    }
+                    $Results = array_merge($Results, $Result['data']);
+                }
+            }
+            return $Results;
+        }  
     }
 
-    // Sonarr API Helper for building queries
-    private function buildSonarrAPIQuery($Cmd,$Params = []) {
+
+    // **
+    // *Arr Shared Functions
+    // **
+
+    // *Arr API Helper for building queries
+    private function buildArrAPIQuery($Cmd,$Params = []) {
         $QueryParams = http_build_query($Params);
         if ($QueryParams) {
             $Query = '&'.$QueryParams;
@@ -400,8 +550,63 @@ class MediaManager extends ib {
         }
     }
 
+    // Normalise titles with spaces and special characters
+    private function normalizeTitle($title) {
+        // Remove special characters and convert to lowercase
+        return strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $title));
+    }
+
+    // **
+    // SONARR
+    // **
+
+    // Sonarr API Wrapper
+    public function querySonarrAPI($Method, $Uri, $Data = "") {
+        if (!isset($this->pluginConfig['sonarrUrl']) || empty($this->pluginConfig['sonarrUrl'])) {
+            $this->api->setAPIResponse('Error','Sonarr URL Missing');
+            return false;
+        }
+
+        if (!isset($this->pluginConfig['sonarrApiKey']) || empty($this->pluginConfig['sonarrApiKey'])) {
+            $this->api->setAPIResponse('Error','Sonarr API Key Missing');
+            return false;
+        }
+
+        $Url = $this->pluginConfig['sonarrUrl']."/api/".$this->pluginConfig['sonarrApiVersion']."/".$Uri;
+        $Url = $Url.'?apikey='.$this->pluginConfig['sonarrApiKey'];
+        return $this->getAPIResults($Method,$Url,$Data);
+    }
+
+    // Function to query list of TV Shows from Sonarr
     public function getSonarrTVShows() {
         $Result = $this->querySonarrAPI('GET','series');
+        return $Result;
+    }
+
+    // **
+    // RADARR
+    // **
+
+    // Radarr API Wrapper
+    public function queryRadarrAPI($Method, $Uri, $Data = "") {
+        if (!isset($this->pluginConfig['radarrUrl']) || empty($this->pluginConfig['radarrUrl'])) {
+            $this->api->setAPIResponse('Error','Radarr URL Missing');
+            return false;
+        }
+
+        if (!isset($this->pluginConfig['radarrApiKey']) || empty($this->pluginConfig['radarrApiKey'])) {
+            $this->api->setAPIResponse('Error','Radarr API Key Missing');
+            return false;
+        }
+
+        $Url = $this->pluginConfig['radarrUrl']."/api/".$this->pluginConfig['radarrApiVersion']."/".$Uri;
+        $Url = $Url.'?apikey='.$this->pluginConfig['radarrApiKey'];
+        return $this->getAPIResults($Method,$Url,$Data);
+    }
+
+    // Function to query list of movies from Radarr
+    public function getRadarrMovies() {
+        $Result = $this->queryRadarrAPI('GET','movie');
         return $Result;
     }
 
@@ -409,11 +614,6 @@ class MediaManager extends ib {
     // **
     // MATCH TAUTULLI -> SONARR
     // **
-
-    private function normalizeTitle($title) {
-        // Remove special characters and convert to lowercase
-        return strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $title));
-    }
 
     private function queryAndMatchSonarrAndTautulli() {
         // Decode JSON data into PHP arrays
@@ -471,6 +671,72 @@ class MediaManager extends ib {
             return $Combined;
         } else {
             $this->api->setAPIResponse('Error', 'Tautulli or Sonarr did not respond as expected.', null, []);
+            return false;
+        }
+    }
+
+    // **
+    // MATCH TAUTULLI -> RADARR
+    // **
+
+    private function queryAndMatchRadarrAndTautulli() {
+        // Decode JSON data into PHP arrays
+        $Radarr = $this->getRadarrMovies();
+        $Tautulli = $this->getTautulliMovies();
+    
+        // Create an associative array for quick lookup from Tautulli data
+        $TautulliMoviesList = [];
+        foreach ($Tautulli as $TautulliMovie) {
+            $TautulliNormalizedTitle = $this->normalizeTitle($TautulliMovie['title']);
+            $TautulliMoviesList[$TautulliNormalizedTitle] = $TautulliMovie;
+        }
+    
+        if ($Radarr && $Tautulli) {
+            // Match Movies
+            $Combined = [];
+            foreach ($Radarr as $RadarrMovie) {
+                $TautulliMovie = null;
+
+                // Check if movie is downloaded, if not then skip the Tautulli check as it won't be on Plex
+                if ($RadarrMovie['hasFile']) {
+                    // Normalize title
+                    $RadarrNormalizedTitle = $this->normalizeTitle($RadarrMovie['title']);
+        
+                    // Check primary title
+                    if (isset($TautulliMoviesList[$RadarrNormalizedTitle])) {
+                        $TautulliMovie = $TautulliMoviesList[$RadarrNormalizedTitle];
+                    } else {
+                        // Check alternative titles if primary title doesn't match
+                        if (isset($RadarrMovie['alternateTitles'])) {
+                            foreach ($RadarrMovie['alternateTitles'] as $altTitle) {
+                                $altNormalizedTitle = $this->normalizeTitle($altTitle['title']);
+                                if (isset($TautulliMoviesList[$altNormalizedTitle])) {
+                                    $TautulliMovie = $TautulliMoviesList[$altNormalizedTitle];
+                                    break; // Break out of the loop
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    $RadarrMovie['MatchStatus'] = 'No Files';
+                }
+    
+                if ($TautulliMovie) {
+                    $RadarrMovie['Tautulli'] = $TautulliMovie;
+                    $RadarrMovie['MatchStatus'] = 'Matched';
+                } else {
+                    $RadarrMovie['Tautulli'] = [];
+                    if (!isset($RadarrMovie['MatchStatus'])) {
+                        $RadarrMovie['MatchStatus'] = 'Unmatched';
+                    }
+                }
+                $Combined[] = $RadarrMovie;
+            }
+            return $Combined;
+        } else {
+            if (empty($GLOBALS['api']['message'])) {
+                $this->api->setAPIResponse('Error', 'Tautulli or Radarr did not respond as expected.', null, []);
+            }
             return false;
         }
     }

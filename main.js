@@ -62,6 +62,14 @@ function sonarrEpisodeProgressFormatter(value, row, index) {
     }
 }
 
+function radarrDownloadStatusFormatter(value, row, index) {
+    if (row.hasFile) {
+        return '<span class="badge bg-success">Available</span></h1>';
+    } else {
+        return '<span class="badge bg-secondary">Unavailable</span></h1>';
+    }
+}
+
 function customQueryParams(params) {
     return {
         limit: params.limit,
@@ -72,6 +80,3 @@ function customQueryParams(params) {
         filter: params.filter
     };
 }
-
-// Initate TV Shows Table
-$("#tvShowsTable").bootstrapTable();
