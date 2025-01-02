@@ -1,2 +1,2 @@
-# Plex TV Show Cleanup Script
-Plex TV Show Cleanup Script
+# Media Manager
+Media Manager Plugin including integration with Sonarr, Radarr & Tautulli.

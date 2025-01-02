@@ -2,10 +2,10 @@
 // **
 // GET PLUGIN SETTINGS
 // **
-$app->get('/plugin/plextvcleaner/settings', function($request, $response, $args) {
-	$plextvcleaner = new plextvcleaner();
-	 if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
-        $plextvcleaner->api->setAPIResponseData($plextvcleaner->_pluginGetSettings());
+$app->get('/plugin/MediaManager/settings', function($request, $response, $args) {
+	$MediaManager = new MediaManager();
+	 if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+        $MediaManager->api->setAPIResponseData($MediaManager->_pluginGetSettings());
 	}
 	$response->getBody()->write(jsonE($GLOBALS['api']));
 	return $response
@@ -16,28 +16,30 @@ $app->get('/plugin/plextvcleaner/settings', function($request, $response, $args)
 // **
 // MATCH TAUTULLI -> SONARR
 // **
-$app->get('/plugin/plextvcleaner/combined/tvshows', function($request, $response, $args) {
-    $plextvcleaner = new plextvcleaner();
-    if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
-        $Results = $plextvcleaner->getTVShowTable();
+$app->get('/plugin/MediaManager/combined/tvshows', function($request, $response, $args) {
+    $MediaManager = new MediaManager();
+    if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+        $params = $request->getQueryParams();
+        $Results = $MediaManager->getTVShowsTable($params);
+        $total = $MediaManager->getTotalTVShows(); // Function to get total count of records
         if ($Results) {
-            $plextvcleaner->api->setAPIResponseData($Results);
+            $MediaManager->api->setAPIResponseData(['total' => $total, 'rows' => $Results]);
         }
     }
-    $response->getBody()->write(jsonE($GLOBALS['api']));
+    $response->getBody()->write(json_encode($GLOBALS['api']));
     return $response
         ->withHeader('Content-Type', 'application/json;charset=UTF-8')
         ->withStatus($GLOBALS['responseCode']);
 });
 
-$app->post('/plugin/plextvcleaner/combined/tvshows/update', function($request, $response, $args) {
-    $plextvcleaner = new plextvcleaner();
-    if ($plextvcleaner->auth->checkAccess($plextvcleaner->config->get("Plugins", "Plex TV Cleaner")['ACL-PLEXTVCLEANER'] ?? "ACL-PLEXTVCLEANER")) {
-        $Results = $plextvcleaner->updateTVShowTable();;
+$app->post('/plugin/MediaManager/combined/tvshows/update', function($request, $response, $args) {
+    $MediaManager = new MediaManager();
+    if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+        $Results = $MediaManager->updateTVShowTable();;
         if ($Results['result'] != 'Error') {
-            $plextvcleaner->api->setAPIResponseMessage($Results['message']);
+            $MediaManager->api->setAPIResponseMessage($Results['message']);
         } else {
-            $plextvcleaner->api->setAPIResponse($Results['result'],$Results['message']);
+            $MediaManager->api->setAPIResponse($Results['result'],$Results['message']);
         }
     }
     $response->getBody()->write(jsonE($GLOBALS['api']));

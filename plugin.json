@@ -1,13 +1,13 @@
 [
     {
-    "name": "Plex TV Cleaner",
-    "repo": "https://github.com/tinytechlabuk/php-ef-plex-tv-cleaner",
+    "name": "Media Manager",
+    "repo": "https://github.com/tinytechlabuk/php-ef-media-manager",
     "author": "tinytechlabuk",
     "category": "Media Management",
     "description": "Plugin for managing and cleaning up Plex TV show folders based on watch history and custom rules",
     "icon": "https://raw.githubusercontent.com/TehMuffinMoo/php-ef-plugin-example/main/logo.png",
-    "contact": "https://github.com/tinytechlabuk/php-ef-plex-tv-cleaner/issues",
-    "link": "https://github.com/tinytechlabuk/php-ef-plex-tv-cleaner",
+    "contact": "https://github.com/tinytechlabuk/php-ef-media-manager/issues",
+    "link": "https://github.com/tinytechlabuk/php-ef-media-manager",
     "version": "1.0.5",
     "minimum_php-ef_version": "0.7.2",
     "release_date": "2024-12-31",

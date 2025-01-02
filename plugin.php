@@ -4,25 +4,25 @@
 // **
 
 // PLUGIN INFORMATION - This should match what is in plugin.json
-$GLOBALS['plugins']['Plex TV Cleaner'] = [
-    'name' => 'Plex TV Cleaner',
+$GLOBALS['plugins']['Media Manager'] = [
+    'name' => 'Media Manager',
     'author' => 'tinytechlabuk',
     'category' => 'Media Management',
-    'link' => 'https://github.com/tinytechlabuk/php-ef-plex-tv-cleaner',
+    'link' => 'https://github.com/tinytechlabuk/php-ef-media-manager',
     'version' => '1.0.5',
     'image' => 'logo.png',
     'settings' => true,
-    'api' => '/api/plugin/plextvcleaner/settings',
+    'api' => '/api/plugin/MediaManager/settings',
 ];
 
-class plextvcleaner extends ib {
+class MediaManager extends ib {
     private $pluginConfig;
     private $sql;
 
     public function __construct() {
         parent::__construct();
         $this->loadConfig();
-        $dbFile = dirname(__DIR__,2). DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'plextvcleaner.db';
+        $dbFile = dirname(__DIR__,2). DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'MediaManager.db';
         $this->sql = new PDO("sqlite:$dbFile");
         $this->sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->hasDB();
@@ -43,7 +43,7 @@ class plextvcleaner extends ib {
                 <br/>']),
             ),
             'Plugin' => array(
-                $this->settingsOption('auth', 'ACL-PLEXTVCLEANER', ['label' => 'Plex TV Cleaner Plugin Access ACL'])
+                $this->settingsOption('auth', 'ACL-MEDIAMANAGER', ['label' => 'Media Manager Plugin Access ACL'])
             ),
             'Tautulli' => array(
                 $this->settingsOption('url', 'tautulliUrl', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port']),
@@ -70,14 +70,14 @@ class plextvcleaner extends ib {
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
                 $this->settingsOption('cron', 'sonarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
-                $this->settingsOption('test', '/api/plugin/plextvcleaner/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
+                $this->settingsOption('test', '/api/plugin/MediaManager/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
                 $this->settingsOption('checkbox', 'removeOrphanedTVShows', ['label' => 'Remove Orphaned Shows on Sync'])
             )
         );
     }
 
     private function loadConfig() {
-        $this->pluginConfig = $this->config->get('Plugins', 'Plex TV Cleaner');
+        $this->pluginConfig = $this->config->get('Plugins', 'Media Manager');
         $this->pluginConfig['tautulliMonths'] = $this->pluginConfig['tautulliMonths'] ?? 12;
         $this->pluginConfig['episodesToKeep'] = $this->pluginConfig['episodesToKeep'] ?? 3;
         $this->pluginConfig['reportOnly'] = $this->pluginConfig['reportOnly'] ?? true;
@@ -97,7 +97,7 @@ class plextvcleaner extends ib {
                 switch($Result->status_code) {
                     case 401:
                         $this->api->setAPIResponse('Error','API Key incorrect or expired');
-                        $this->logging->writeLog("PlexTVCleaner","Error. API Key incorrect or expired.","error");
+                        $this->logging->writeLog("MediaManager","Error. API Key incorrect or expired.","error");
                         return;
                     case 404:
                         $this->api->setAPIResponse('Error','HTTP 404 Not Found');
@@ -139,7 +139,7 @@ class plextvcleaner extends ib {
 				if (in_array('tvshows', $tables)) {
 					return true;
 				} else {
-					$this->createPlexTVCleanerTables();
+					$this->createMediaManagerTables();
 				}
 			} catch (PDOException $e) {
 				$this->api->setAPIResponse("Error",$e->getMessage());
@@ -151,8 +151,8 @@ class plextvcleaner extends ib {
 		}
 	}
 
-	// Create Plex TV Cleaner Tables
-	private function createPlexTVCleanerTables() {
+	// Create Media Manager Tables
+	private function createMediaManagerTables() {
 		$this->sql->exec("CREATE TABLE IF NOT EXISTS tvshows (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			title TEXT UNIQUE,
@@ -224,7 +224,7 @@ class plextvcleaner extends ib {
                         ':ratingKey' => $Show['Tautulli']['rating_key'] ?? null
                     ]);
                 } catch (Exception $e) {
-                    $this->logging->writeLog("PlexTVCleaner","Failed to update the TV Shows Table.","error",$e);
+                    $this->logging->writeLog("MediaManager","Failed to update the TV Shows Table.","error",$e);
                     return array(
                         'result' => 'Error',
                         'message' => $e
@@ -234,7 +234,7 @@ class plextvcleaner extends ib {
     
             // Update 'MatchStatus' to 'Orphaned' for shows not in $Shows but present in the database
             try {
-                $removeOrphaned = $this->config->get('Plugins','Plex TV Cleaner')['removeOrphanedTVShows'] ?? false;
+                $removeOrphaned = $this->config->get('Plugins','Media Manager')['removeOrphanedTVShows'] ?? false;
                 if ($removeOrphaned) {
                     $stmt = $this->sql->prepare('DELETE FROM tvshows WHERE title NOT IN (' . implode(',', array_fill(0, count($showTitles), '?')) . ')');
                     $stmt->execute($showTitles);
@@ -243,27 +243,43 @@ class plextvcleaner extends ib {
                     $stmt->execute($showTitles);
                 }
             } catch (Exception $e) {
-                $this->logging->writeLog("PlexTVCleaner","Failed to update orphaned TV Shows.","error",$e);
+                $this->logging->writeLog("MediaManager","Failed to update orphaned TV Shows.","error",$e);
                 return array(
                     'result' => 'Error',
                     'message' => $e
                 );
             }
     
-            $this->logging->writeLog("PlexTVCleaner","Synchronised with Sonarr & Tautulli Successfully.","info");
+            $this->logging->writeLog("MediaManager","Synchronised with Sonarr & Tautulli Successfully.","info");
             return array(
                 'result' => 'Success',
                 'message' => 'Successfully updated TV Show Table.'
             );
         } else {
-            $this->logging->writeLog("PlexTVCleaner","Failed to retrieve a list of TV Shows.","error");
+            $this->logging->writeLog("MediaManager","Failed to retrieve a list of TV Shows.","error");
         }
     }
 
-    public function getTVShowTable() {
-        $stmt = $this->sql->prepare('SELECT * FROM tvshows');
+    public function getTVShowsTable($Params) {
+        // Searching
+        if (!empty($params['search'])) {
+            $query .= ' AND (title LIKE :search OR status LIKE :search)';
+        }
+        $SearchColumns = [
+            'title',
+            'status',
+            'matchStatus',
+            'seriesType',
+            'library'
+        ];
+        return $this->dbHelper->queryDBWithParams($this->sql,'tvshows',$Params,$SearchColumns);
+    }
+
+    public function getTotalTVShows() {
+        $stmt = $this->sql->prepare('SELECT COUNT(*) as total FROM tvshows');
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
     }
 
 

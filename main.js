@@ -13,7 +13,7 @@ function convertBytesToGB(bytes) {
 
 // Tautulli Bootstrap Table Response Handler
 function tautulliResponseHandler(response) {
-    const data = response.data;
+    const data = response.data.rows;
     if (response.result == "Success") {
         data.sort((a, b) => b.last_played - a.last_played);
         const totalShows = data.length;
@@ -29,8 +29,11 @@ function tautulliResponseHandler(response) {
         }).length;
 
         $('#recentlyWatched').text(recentShows);
-        $('#totalShows').text(totalShows);
-        return data;
+        $('#totalShows').text(response.data.total);
+        return {
+            total: response.data.total,
+            rows: data
+        };
     } else {
         toast("Error", "", response.message, "danger", "30000");
     }
@@ -59,7 +62,16 @@ function sonarrEpisodeProgressFormatter(value, row, index) {
     }
 }
 
-
+function customQueryParams(params) {
+    return {
+        limit: params.limit,
+        offset: params.offset,
+        search: params.search,
+        sort: params.sort,
+        order: params.order,
+        filter: params.filter
+    };
+}
 
 // Initate TV Shows Table
 $("#tvShowsTable").bootstrapTable();

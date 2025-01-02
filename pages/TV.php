@@ -1,7 +1,7 @@
 <?php
-$plextvcleaner = new plextvcleaner();
-$pluginConfig = $plextvcleaner->config->get('Plugins','Plex TV Cleaner');
-if ($plextvcleaner->auth->checkAccess($pluginConfig['ACL-PLEXTVCLEANER'] ?? null) == false) {
+$MediaManager = new MediaManager();
+$pluginConfig = $MediaManager->config->get('Plugins','Media Manager');
+if ($MediaManager->auth->checkAccess($pluginConfig['ACL-MEDIAMANAGER'] ?? null) == false) {
     die();
 }
 return '
@@ -89,7 +89,7 @@ return '
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                <table data-url="/api/plugin/plextvcleaner/combined/tvshows"
+                <table data-url="/api/plugin/MediaManager/combined/tvshows"
                     data-toggle="table"
                     data-search="true"
                     data-filter-control="true"
@@ -98,8 +98,10 @@ return '
                     data-show-refresh="true"
                     data-show-columns="true"
                     data-pagination="true"
+                    data-side-pagination="server"
                     data-toolbar="#toolbar"
                     data-page-size="25"
+                    data-query-params="customQueryParams"
                     data-response-handler="tautulliResponseHandler"
                     class="table table-striped" id="tvShowsTable">
 
@@ -112,7 +114,7 @@ return '
                         <th data-field="matchStatus" data-sortable="true" data-filter-control="select" data-visible="false">Match Status</th>
                         <th data-field="seasonCount" data-sortable="true" data-filter-control="input">Season Count</th>
                         <th data-field="episodeCount" data-sortable="true" data-filter-control="input">Episode Count</th>
-                        <th data-field="percentOfEpisodes" data-sortable="true" data-formatter="sonarrEpisodeProgressFormatter" data-filter-control="input">Episodes Downloaded</th>
+                        <th data-field="episodesDownloadedPercentage" data-sortable="true" data-formatter="sonarrEpisodeProgressFormatter" data-filter-control="input">Episodes Downloaded</th>
                         <th data-field="sizeOnDisk" data-sortable="true" data-formatter="sonarrSizeOnDiskFormatter" data-filter-control="input">Size</th>
                         <th data-field="seriesType" data-sortable="true" data-filter-control="input" data-visible="false">Series Type</th>
                         <th data-field="last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
