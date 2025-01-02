@@ -15,7 +15,6 @@ function convertBytesToGB(bytes) {
 function tautulliResponseHandler(response) {
     const data = response.data.rows;
     if (response.result == "Success") {
-        data.sort((a, b) => b.last_played - a.last_played);
         const totalShows = data.length;
         const recentShows = data.filter(row => {
             if (row.length != 0) {
