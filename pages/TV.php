@@ -26,7 +26,7 @@ return '
                             <h5 class="card-title">TV Shows: </h5>
                         </div>
                         <div class="pt-1 ps-3">
-                            <h6 id="totalShows" class="metric-circle border-5">N/A</h6>
+                            <h6 id="totalItems" class="metric-circle border-5">N/A</h6>
                         </div>
                     </div>
                 </div>

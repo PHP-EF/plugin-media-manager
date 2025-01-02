@@ -15,7 +15,7 @@ function convertBytesToGB(bytes) {
 function tautulliResponseHandler(response) {
     const data = response.data.rows;
     if (response.result == "Success") {
-        const totalShows = data.length;
+        const totalItems = data.length;
         const recentShows = data.filter(row => {
             if (row.length != 0) {
                 const lastPlayedDate = new Date(row.last_played * 1000); // Convert epoch to date
@@ -28,7 +28,7 @@ function tautulliResponseHandler(response) {
         }).length;
 
         $('#recentlyWatched').text(recentShows);
-        $('#totalShows').text(response.data.total);
+        $('#totalItems').text(response.data.total);
         return {
             total: response.data.total,
             rows: data
