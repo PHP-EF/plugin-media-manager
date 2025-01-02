@@ -15,11 +15,11 @@ function convertBytesToGB(bytes) {
 function tautulliResponseHandler(response) {
     const data = response.data;
     if (response.result == "Success") {
-        data.sort((a, b) => b.Tautulli.last_played - a.Tautulli.last_played);
+        data.sort((a, b) => b.last_played - a.last_played);
         const totalShows = data.length;
         const recentShows = data.filter(row => {
-            if (row.Tautulli.length != 0) {
-                const lastPlayedDate = new Date(row.Tautulli.last_played * 1000); // Convert epoch to date
+            if (row.length != 0) {
+                const lastPlayedDate = new Date(row.last_played * 1000); // Convert epoch to date
                 const ninetyDaysAgo = new Date();
                 ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
                 return lastPlayedDate >= ninetyDaysAgo;
@@ -38,8 +38,8 @@ function tautulliResponseHandler(response) {
 
 // Tautulli Last Watched Date Formatter
 function tautulliLastWatchedFormatter(value, row, index) {
-    if (row.Tautulli.last_played) {
-        return convertEpochToGMT(row.Tautulli.last_played);
+    if (row.last_played) {
+        return convertEpochToGMT(row.last_played);
     } else {
         return 'Never';
     }
@@ -47,14 +47,14 @@ function tautulliLastWatchedFormatter(value, row, index) {
 
 // Bytes to GB Formatter
 function sonarrSizeOnDiskFormatter(value, row, index) {
-    if (row.statistics.sizeOnDisk) {
-        return convertBytesToGB(row.statistics.sizeOnDisk)+' GB';
+    if (row.sizeOnDisk) {
+        return convertBytesToGB(row.sizeOnDisk)+' GB';
     }
 }
 
 function sonarrEpisodeProgressFormatter(value, row, index) {
-    if (row.statistics.percentOfEpisodes) {
-        var percentage = row.statistics.percentOfEpisodes.toFixed(2);
+    if (row.episodesDownloadedPercentage) {
+        var percentage = row.episodesDownloadedPercentage.toFixed(2);
         return '<div class="progress"><div class="progress-bar bg-info" role="progressbar" style="width: '+percentage+'%" aria-valuenow="'+percentage+'" aria-valuemin="0" aria-valuemax="100">'+percentage+'%</div></div>';
     }
 }

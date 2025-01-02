@@ -97,7 +97,6 @@ return '
                     data-show-filter-control-switch="true"
                     data-show-refresh="true"
                     data-show-columns="true"
-                    data-show-
                     data-pagination="true"
                     data-toolbar="#toolbar"
                     data-page-size="25"
@@ -111,14 +110,15 @@ return '
                         <th data-field="monitored" data-sortable="true" data-filter-control="select" data-visible="false">Monitored</th>
                         <th data-field="status" data-sortable="true" data-filter-control="select">Show Status</th>
                         <th data-field="MatchStatus" data-sortable="true" data-filter-control="select" data-visible="false">Match Status</th>
-                        <th data-field="statistics.seasonCount" data-sortable="true" data-filter-control="input">Season Count</th>
-                        <th data-field="statistics.episodeCount" data-sortable="true" data-filter-control="input">Episode Count</th>
-                        <th data-field="statistics.percentOfEpisodes" data-sortable="true" data-formatter="sonarrEpisodeProgressFormatter" data-filter-control="input">Episodes Downloaded</th>
-                        <th data-field="statistics.sizeOnDisk" data-sortable="true" data-formatter="sonarrSizeOnDiskFormatter" data-filter-control="input">Size</th>
-                        <th data-field="statistics.seriesType" data-sortable="true" data-filter-control="input" data-visible="false">Series Type</th>
-                        <th data-field="Tautulli.last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
-                        <th data-field="Tautulli.play_count" data-sortable="true" data-filter-control="input">Play Count</th>
-                        <th data-field="Tautulli.library_name" data-sortable="true" data-filter-control="select">Library</th>
+                        <th data-field="seasonCount" data-sortable="true" data-filter-control="input">Season Count</th>
+                        <th data-field="episodeCount" data-sortable="true" data-filter-control="input">Episode Count</th>
+                        <th data-field="percentOfEpisodes" data-sortable="true" data-formatter="sonarrEpisodeProgressFormatter" data-filter-control="input">Episodes Downloaded</th>
+                        <th data-field="sizeOnDisk" data-sortable="true" data-formatter="sonarrSizeOnDiskFormatter" data-filter-control="input">Size</th>
+                        <th data-field="seriesType" data-sortable="true" data-filter-control="input" data-visible="false">Series Type</th>
+                        <th data-field="last_played" data-sortable="true" data-formatter="tautulliLastWatchedFormatter" data-filter-control="input">Last Watched</th>
+                        <th data-field="play_count" data-sortable="true" data-filter-control="input">Play Count</th>
+                        <th data-field="library" data-sortable="true" data-filter-control="select">Library</th>
+                        <th data-field="library_id" data-sortable="true" data-filter-control="select" data-visible="false">Library ID</th>
                     </tr>
                     </thead>
                 </table>

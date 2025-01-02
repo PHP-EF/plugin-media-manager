@@ -17,18 +17,15 @@ $GLOBALS['plugins']['Plex TV Cleaner'] = [
 
 class plextvcleaner extends ib {
     private $pluginConfig;
+    private $sql;
 
     public function __construct() {
         parent::__construct();
         $this->loadConfig();
-    }
-
-    private function loadConfig() {
-        $this->pluginConfig = $this->config->get('Plugins', 'Plex TV Cleaner');
-        $this->pluginConfig['tautulliMonths'] = $this->pluginConfig['tautulliMonths'] ?? 12;
-        $this->pluginConfig['episodesToKeep'] = $this->pluginConfig['episodesToKeep'] ?? 3;
-        $this->pluginConfig['reportOnly'] = $this->pluginConfig['reportOnly'] ?? true;
-        $this->pluginConfig['promptForFolderDeletion'] = $this->pluginConfig['promptForFolderDeletion'] ?? true;
+        $dbFile = dirname(__DIR__,2). DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'plextvcleaner.db';
+        $this->sql = new PDO("sqlite:$dbFile");
+        $this->sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->hasDB();
     }
 
     public function _pluginGetSettings() {
@@ -45,24 +42,24 @@ class plextvcleaner extends ib {
                 <p>This plugin helps manage and clean up TV show folders in your Plex server environment. It integrates with Tautulli to track watched shows and applies custom cleanup rules to maintain a manageable library size.</p>
                 <br/>']),
             ),
-            'Plugin Settings' => array(
+            'Plugin' => array(
                 $this->settingsOption('auth', 'ACL-PLEXTVCLEANER', ['label' => 'Plex TV Cleaner Plugin Access ACL'])
             ),
-            'TV Show Settings' => array(
+            'TV Shows' => array(
                 $this->settingsOption('input', 'tvRootFolder', ['label' => 'Plex TV Root Folder', 'placeholder' => '\\\\SERVER\\Plex\\TV']),
                 $this->settingsOption('input-multiple', 'tvExcludeFolders', ['label' => 'TV Shows to Exclude', 'values' => $excludeFolders, 'text' => 'Add'])
             ),
-            'Tautulli Settings' => array(
+            'Tautulli' => array(
                 $this->settingsOption('url', 'tautulliUrl', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('input', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('input', 'tautulliMonths', ['label' => 'Months to Look Back', 'placeholder' => '12'])
             ),
-            'Sonarr Settings' => array(
+            'Sonarr' => array(
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('input', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v1', "value" => 'v1'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v3', "value" => 'v3'))]),
             ),
-            'Cleanup Settings' => array(
+            'Cleanup' => array(
                 $this->settingsOption('input', 'episodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '3']),
                 $this->settingsOption('select', 'reportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
                     ['name' => 'Yes', 'value' => 'true'],
@@ -73,7 +70,20 @@ class plextvcleaner extends ib {
                     ['name' => 'No', 'value' => 'false']
                 ]])
             ),
+            'Cron Jobs' => array(
+                $this->settingsOption('title', 'sectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
+                $this->settingsOption('cron', 'sonarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
+                $this->settingsOption('test', '/api/plugin/plextvcleaner/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST'])
+            )
         );
+    }
+
+    private function loadConfig() {
+        $this->pluginConfig = $this->config->get('Plugins', 'Plex TV Cleaner');
+        $this->pluginConfig['tautulliMonths'] = $this->pluginConfig['tautulliMonths'] ?? 12;
+        $this->pluginConfig['episodesToKeep'] = $this->pluginConfig['episodesToKeep'] ?? 3;
+        $this->pluginConfig['reportOnly'] = $this->pluginConfig['reportOnly'] ?? true;
+        $this->pluginConfig['promptForFolderDeletion'] = $this->pluginConfig['promptForFolderDeletion'] ?? true;
     }
 
     // Generic Get API Results Function, to be shared across any API Wrappers
@@ -116,6 +126,128 @@ class plextvcleaner extends ib {
     }
 
 
+    // **
+    // DATABASE
+    // **
+
+	// Check if Database & Tables Exist
+	private function hasDB() {
+		if ($this->sql) {
+			try {
+				// Query to check if both tables exist
+				$result = $this->sql->query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tvshows')");
+				$tables = $result->fetchAll(PDO::FETCH_COLUMN);
+			
+				if (in_array('tvshows', $tables)) {
+					return true;
+				} else {
+					$this->createPlexTVCleanerTables();
+				}
+			} catch (PDOException $e) {
+				$this->api->setAPIResponse("Error",$e->getMessage());
+				return false;
+			}
+		} else {
+			$this->api->setAPIResponse("Error","Database Not Initialized");
+			return false;
+		}
+	}
+
+	// Create Plex TV Cleaner Tables
+	private function createPlexTVCleanerTables() {
+		$this->sql->exec("CREATE TABLE IF NOT EXISTS tvshows (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			title TEXT UNIQUE,
+			monitored BOOLEAN,
+			status TEXT,
+			matchStatus TEXT,
+			seasonCount INTEGER,
+			episodeCount INTEGER,
+			episodesDownloadedPercentage INTEGER,
+            sizeOnDisk INTEGER,
+            seriesType TEXT,
+            last_played INTEGER,
+            added TEXT,
+			play_count INTEGER,
+            library TEXT,
+            library_id INTEGER,
+            path TEXT,
+            rootFolder TEXT,
+            titleSlug TEXT,
+            tvDbId INTEGER,
+            ratingKey INTEGER
+		)");
+	}
+
+    public function updateTVShowTable() {
+        $Shows = $this->queryAndMatchSonarrAndTautulli();
+        if ($Shows) {
+            $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey)';
+            $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey WHERE title = :title';
+        
+            foreach ($Shows as $Show) {
+                try {
+                    // Check if the show exists
+                    $stmt = $this->sql->prepare('SELECT COUNT(*) FROM tvshows WHERE title = :title');
+                    $stmt->execute([':title' => $Show['title']]);
+                    $exists = $stmt->fetchColumn();
+            
+                    if ($exists) {
+                        // Update existing record
+                        $stmt = $this->sql->prepare($UpdatePrepare);
+                    } else {
+                        // Insert new record
+                        $stmt = $this->sql->prepare($InsertPrepare);
+                    }
+            
+                    // Bind parameters and execute
+                    $stmt->execute([
+                        ':title' => $Show['title'],
+                        ':monitored' => $Show['monitored'],
+                        ':status' => $Show['status'],
+                        ':matchStatus' => $Show['MatchStatus'],
+                        ':seasonCount' => $Show['statistics']['seasonCount'],
+                        ':episodeCount' => $Show['statistics']['episodeCount'],
+                        ':episodesDownloadedPercentage' => $Show['statistics']['percentOfEpisodes'],
+                        ':sizeOnDisk' => $Show['statistics']['sizeOnDisk'],
+                        ':seriesType' => $Show['seriesType'],
+                        ':last_played' => $Show['Tautulli']['last_played'] ?? null,
+                        ':added' => $Show['added'],
+                        ':play_count' => $Show['Tautulli']['play_count'] ?? null,
+                        ':library' => $Show['Tautulli']['library_name'] ?? null,
+                        ':library_id' => $Show['Tautulli']['section_id'] ?? null,
+                        ':path' => $Show['path'],
+                        ':rootFolder' => $Show['rootFolderPath'],
+                        ':titleSlug' => $Show['titleSlug'],
+                        ':tvDbId' => $Show['tvdbId'],
+                        ':ratingKey' => $Show['Tautulli']['rating_key'] ?? null
+                    ]);
+                } catch (Exception $e) {
+                    $this->logging->writeLog("PlexTVCleaner","Failed to update the TV Shows Table.","error",$e);
+                    return array(
+                        'result' => 'Error',
+                        'message' => $e
+                    );
+                }
+            }
+
+            $this->logging->writeLog("PlexTVCleaner","Synchronised with Sonarr & Tautulli Successfully.","info");
+            return array(
+                'result' => 'Success',
+                'message' => 'Successfully updated TV Show Table.'
+            );
+        } else {
+            $this->logging->writeLog("PlexTVCleaner","Failed to retrieve a list of TV Shows.","error");
+        }
+    }
+
+    public function getTVShowTable() {
+        $stmt = $this->sql->prepare('SELECT * FROM tvshows');
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
 
     // **
     // TAUTULLI
@@ -152,14 +284,12 @@ class plextvcleaner extends ib {
     // Get a list of Tautulli Libraries
     public function getTautulliLibraries() {
         $Result = $this->queryTautulliAPI('GET',$this->buildTautulliAPIQuery('get_libraries'));
-        $this->api->setAPIResponseData($Result);
         return $Result;
     }
 
     // Get a list of Media from a particular library
     public function getTautulliMediaFromLibrary($Params) {
         $Result = $this->queryTautulliAPI('GET',$this->buildTautulliAPIQuery('get_library_media_info',$Params));
-        $this->api->setAPIResponseData($Result);
         return $Result;
     }
 
@@ -175,7 +305,6 @@ class plextvcleaner extends ib {
         $unwatched_shows = array_filter($Media['data'], function($show) {
             return empty($show['last_played']);
         });
-        $this->api->setAPIResponseData($unwatched_shows);
         return $unwatched_shows;
     }
 
@@ -246,12 +375,12 @@ class plextvcleaner extends ib {
     // MATCH TAUTULLI -> SONARR
     // **
 
-    function normalizeTitle($title) {
+    private function normalizeTitle($title) {
         // Remove special characters and convert to lowercase
         return strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $title));
     }
 
-    function queryAndMatchSonarrAndTautulli() {
+    private function queryAndMatchSonarrAndTautulli() {
         // Decode JSON data into PHP arrays
         $Sonarr = $this->getSonarrTVShows();
         $Tautulli = $this->getTautulliTVShows();
@@ -304,10 +433,10 @@ class plextvcleaner extends ib {
                 }
                 $Combined[] = $SonarrShow;
             }
-            $this->api->setAPIResponseData($Combined);
             return $Combined;
         } else {
             $this->api->setAPIResponse('Error', 'Tautulli or Sonarr did not respond as expected.', null, []);
+            return false;
         }
     }
 }
