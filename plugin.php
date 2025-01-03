@@ -18,6 +18,7 @@ $GLOBALS['plugins']['Media Manager'] = [
 class MediaManager extends ib {
     private $pluginConfig;
     private $sql;
+    private $sqlHelper;
 
     public function __construct() {
         parent::__construct();
@@ -26,6 +27,8 @@ class MediaManager extends ib {
         $this->sql = new PDO("sqlite:$dbFile");
         $this->sql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->hasDB();
+        $this->sqlHelper = new dbHelper($this->sql);
+        $this->checkDB();
     }
 
     public function _pluginGetSettings() {
@@ -175,10 +178,10 @@ class MediaManager extends ib {
 		if ($this->sql) {
 			try {
 				// Query to check if both tables exist
-				$result = $this->sql->query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tvshows','movies')");
+				$result = $this->sql->query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tvshows','movies','options')");
 				$tables = $result->fetchAll(PDO::FETCH_COLUMN);
 			
-				if (in_array('tvshows', $tables) && in_array('movies', $tables)) {
+				if (in_array('tvshows', $tables) && in_array('movies', $tables) && in_array('options', $tables)) {
 					return true;
 				} else {
 					$this->createMediaManagerTables();
@@ -192,6 +195,24 @@ class MediaManager extends ib {
 			return false;
 		}
 	}
+
+    // Initiate Database Migration if required
+    private function checkDB() {
+        $currentVersion = $this->sqlHelper->getDatabaseVersion();
+        $newVersion = $GLOBALS['plugins']['Media Manager']['version'];
+        if ($currentVersion < $newVersion) {
+            $this->sqlHelper->updateDatabaseSchema($currentVersion, $newVersion, $this->migrationScripts());
+        }
+    }
+
+    // Database Migration Script(s) for changes between versions
+    public function migrationScripts() {
+        return [
+        '1.0.5' => [],
+        '1.0.6' => [],
+        '1.0.7' => []
+        ];
+    }
 
 	// Create Media Manager Tables
 	private function createMediaManagerTables() {
@@ -242,6 +263,14 @@ class MediaManager extends ib {
             tags TEXT,
             clean BOOLEAN
         )");
+
+        $this->sql->exec("CREATE TABLE IF NOT EXISTS options (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Key TEXT,
+            Value TEXT
+        )");
+
+        $this->sql->exec('INSERT INTO options (Key,Value) VALUES ("dbVersion","'.$GLOBALS['plugins']['Media Manager']['version'].'");');
 	}
 
     // Function to update the TV Shows Table (Synchronisation)
@@ -377,7 +406,7 @@ class MediaManager extends ib {
             'seriesType',
             'library'
         ];
-        return $this->dbHelper->queryDBWithParams($this->sql,'tvshows',$Params,$SearchColumns);
+        return $this->sqlHelper->queryDBWithParams('tvshows',$Params,$SearchColumns);
     }
 
     // Function to get the total number of TV Shows
@@ -400,6 +429,14 @@ class MediaManager extends ib {
         }
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
+    }
+
+    // Function to get TV Shows By tvDbId
+    public function getTVShowsTableByTvDbId($TvDbId) {
+        $stmt = $this->sql->prepare("SELECT * FROM tvshows WHERE tvDbId = :tvDbId");
+        $stmt->execute(['TvDbId' => $TvDbId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result;
     }
     
@@ -531,7 +568,7 @@ class MediaManager extends ib {
             'matchStatus',
             'library'
         ];
-        return $this->dbHelper->queryDBWithParams($this->sql,'movies',$Params,$SearchColumns);
+        return $this->sqlHelper->queryDBWithParams('movies',$Params,$SearchColumns);
     }
 
     // Function to get the total number of Movies
@@ -679,13 +716,11 @@ class MediaManager extends ib {
     // **
 
     // *Arr API Helper for building queries
-    private function buildArrAPIQuery($Cmd,$Params = []) {
+    private function buildArrAPIQuery($Params = []) {
         $QueryParams = http_build_query($Params);
         if ($QueryParams) {
-            $Query = '&'.$QueryParams;
+            $Query = '?'.$QueryParams;
             return $Query;
-        } else {
-            return $Cmd;
         }
     }
 
@@ -701,25 +736,29 @@ class MediaManager extends ib {
         return $interval->days > $days;
     }
 
+
+
     // **
     // SONARR
     // **
 
     // Sonarr API Wrapper
-    public function querySonarrAPI($Method, $Uri, $Data = "") {
+    public function querySonarrAPI($Method, $Uri, $Data = "", $Params = []) {
         if (!isset($this->pluginConfig['sonarrUrl']) || empty($this->pluginConfig['sonarrUrl'])) {
             $this->api->setAPIResponse('Error','Sonarr URL Missing');
             return false;
         }
-
         if (!isset($this->pluginConfig['sonarrApiKey']) || empty($this->pluginConfig['sonarrApiKey'])) {
             $this->api->setAPIResponse('Error','Sonarr API Key Missing');
             return false;
         }
-
-        $Url = $this->pluginConfig['sonarrUrl']."/api/".$this->pluginConfig['sonarrApiVersion']."/".$Uri;
-        $Url = $Url.'?apikey='.$this->pluginConfig['sonarrApiKey'];
-        return $this->getAPIResults($Method,$Url,$Data);
+        $Params['apikey'] = $this->pluginConfig['sonarrApiKey'];
+        if (!empty($Params)) {
+            $BuiltQuery = $this->buildArrAPIQuery($Params);
+            $Url = $this->pluginConfig['sonarrUrl']."/api/".$this->pluginConfig['sonarrApiVersion']."/".$Uri;
+            $Url = $Url.$BuiltQuery;
+            return $this->getAPIResults($Method,$Url,$Data);
+        }
     }
 
     // Function to query list of TV Shows from Sonarr
@@ -728,25 +767,63 @@ class MediaManager extends ib {
         return $Result;
     }
 
+    // Function to query list of TV Shows from Sonarr by Series ID
+    public function getSonarrTVShowsById($id) {
+        $Result = $this->querySonarrAPI('GET','series/'.$id);
+        return $Result;
+    }
+
+    // Function to query list of Episodes from Sonarr, filtering by a specific Series ID
+    public function getSonarrEpisodesBySeriesId($id) {
+        $Params = array(
+            "seriesId" => $id
+        );
+        $Result = $this->querySonarrAPI('GET','episode',null,$Params);
+        return $Result;
+    }
+
     public function getSonarrTags() {
         $Result = $this->querySonarrAPI('GET','tag');
         return $Result;
     }
+
+	public function runSonarrCommand($postData) {
+		try {
+            $Result = $this->querySonarrAPI('GET','command',$postData);
+			if ($Result) {
+				return $Result;
+			} else {
+				$this->logging->writeLog('Sonarr','Unable to run Sonarr command','error',$Result);
+				return false;
+			}
+		} catch (Requests_Exception $e) {
+			$this->logging->writeLog('Sonarr','Unable to run Sonarr command','error',$e);
+			return false;
+		}	
+	}
+
+
 
     // **
     // RADARR
     // **
 
     // Radarr API Wrapper
-    public function queryRadarrAPI($Method, $Uri, $Data = "") {
+    public function queryRadarrAPI($Method, $Uri, $Data = "", $Params = []) {
         if (!isset($this->pluginConfig['radarrUrl']) || empty($this->pluginConfig['radarrUrl'])) {
             $this->api->setAPIResponse('Error','Radarr URL Missing');
             return false;
         }
-
         if (!isset($this->pluginConfig['radarrApiKey']) || empty($this->pluginConfig['radarrApiKey'])) {
             $this->api->setAPIResponse('Error','Radarr API Key Missing');
             return false;
+        }
+        $Params['apikey'] = $this->pluginConfig['sonarrApiKey'];
+        if (!empty($Params)) {
+            $BuiltQuery = $this->buildArrAPIQuery($Params);
+            $Url = $this->pluginConfig['radarrUrl']."/api/".$this->pluginConfig['radarrApiVersion']."/".$Uri;
+            $Url = $Url.$BuiltQuery;
+            return $this->getAPIResults($Method,$Url,$Data);
         }
 
         $Url = $this->pluginConfig['radarrUrl']."/api/".$this->pluginConfig['radarrApiVersion']."/".$Uri;
@@ -895,6 +972,76 @@ class MediaManager extends ib {
             return false;
         }
     }
+
+
+
+    // **
+    // SONARR THROTTLING
+    // **
+
+    public function TautulliWebhook($request)
+	{
+		## Get Throttled Tag
+		$ThrottledTag = $this->pluginConfig['sonarrThrottledTag'] ?? null;
+
+		## Error if Throttled tag is not set
+		if (empty($ThrottledTag)) {
+			$this->api->setAPIResponse('Error', 'Throttling tag is missing, check logs.');
+            $this->logging->writeLog("SonarrThrottling","Throttling tag is missing or not set","error");
+			return false;
+		}
+			
+		## Check for valid data and API Key
+		if ($request == null) {
+			$this->api->setAPIResponse('Error', 'Tautulli Webhook Request Empty.');
+            $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Request Empty","error");
+			return false;
+		}
+		
+		## Check for test notification
+		if ($request['test_notification']) {
+			$this->api->setAPIResponseMessage('Tautulli Webhook Test Successful.');
+            $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Test Received","notice",$request);
+			return true;
+		}
+
+		if ($request['media_type'] == "episode") {
+			## Check tvdbId exists
+			if (empty($request['tvdbId'])) {
+                $this->api->setAPIResponse('Error', 'Empty tvdbId.');
+                $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Error: Empty tvdbId","error",$request);
+				return false;
+			}
+
+			## Search TV Shows Table for matching tvDbId
+			$TvDbIdMatch = $this->getTVShowsTableByTvDbId($request['tvdbId']);
+
+			## Check if Sonarr ID Exists
+			if (empty($TvDbIdMatch['id'])) {
+                $this->api->setAPIResponse('Error', 'TV Show not in Sonarr database.');
+                $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Error: TV Show not in Sonarr database.","error",$request);
+				return false;
+			}
+				
+			## Query Sonarr Series API
+			$SonarrSeries = $this->getTVShowsTableByTvDbId($TvDbIdMatch['id']);
+				
+			## Query Sonarr Episode API
+			if (in_array($ThrottledTag,explode(',',$SonarrSeries['tags']))) {
+                $this->api->setAPIResponse('Success', 'TV Show Throttled.');
+                $this->logging->writeLog("SonarrThrottling","TV Show Throttled: ".$SonarrSeries['title'],"info");
+				return true;
+			} else {
+                $this->api->setAPIResponse('Success', 'TV Show Not Throttled.');
+                $this->logging->writeLog("SonarrThrottling","TV Show Not Throttled: ".$SonarrSeries['title'],"info");
+				return true;
+			}
+		} else {
+            $this->api->setAPIResponse('Success', 'Not a TV Show.');
+            $this->logging->writeLog("SonarrThrottling","Not a TV Show.","info");
+            return true;
+		}
+	}
 }
 
 
