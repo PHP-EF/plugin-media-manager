@@ -32,8 +32,8 @@ class MediaManager extends ib {
     }
 
     public function _pluginGetSettings() {
-        $SonarrTags = $this->getSonarrTags();
-        $RadarrTags = $this->getRadarrTags();
+        $SonarrTags = $this->getSonarrTags() ?? [];
+        $RadarrTags = $this->getRadarrTags() ?? [];
         $AppendNone = array(
             [
                 "name" => 'None',
