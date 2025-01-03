@@ -817,17 +817,13 @@ class MediaManager extends ib {
             $this->api->setAPIResponse('Error','Radarr API Key Missing');
             return false;
         }
-        $Params['apikey'] = $this->pluginConfig['sonarrApiKey'];
+        $Params['apikey'] = $this->pluginConfig['radarrApiKey'];
         if (!empty($Params)) {
             $BuiltQuery = $this->buildArrAPIQuery($Params);
             $Url = $this->pluginConfig['radarrUrl']."/api/".$this->pluginConfig['radarrApiVersion']."/".$Uri;
             $Url = $Url.$BuiltQuery;
             return $this->getAPIResults($Method,$Url,$Data);
         }
-
-        $Url = $this->pluginConfig['radarrUrl']."/api/".$this->pluginConfig['radarrApiVersion']."/".$Uri;
-        $Url = $Url.'?apikey='.$this->pluginConfig['radarrApiKey'];
-        return $this->getAPIResults($Method,$Url,$Data);
     }
 
     // Function to query list of movies from Radarr
