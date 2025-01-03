@@ -9,7 +9,7 @@ $GLOBALS['plugins']['Media Manager'] = [
     'author' => 'tinytechlabuk',
     'category' => 'Media Management',
     'link' => 'https://github.com/tinytechlabuk/php-ef-media-manager',
-    'version' => '1.0.6',
+    'version' => '1.0.7',
     'image' => 'logo.png',
     'settings' => true,
     'api' => '/api/plugin/mediamanager/settings',
@@ -65,32 +65,34 @@ class MediaManager extends ib {
             ),
             'Tautulli' => array(
                 $this->settingsOption('url', 'tautulliUrl', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port']),
-                $this->settingsOption('password-alt', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key']),
-                $this->settingsOption('input', 'tautulliMonths', ['label' => 'Months to Look Back', 'placeholder' => '12'])
+                $this->settingsOption('password-alt', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key'])
             ),
             'Sonarr' => array(
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password-alt', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
-                // $this->settingsOption('hr'),
-                // $this->settingsOption('title', 'sonarrCleanupTitle', ['text' => 'Cleanup']),
-                $this->settingsOption('select', 'sonarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
-                    ['name' => 'Yes', 'value' => 'true'],
-                    ['name' => 'No', 'value' => 'false']
-                ]]),
-                // $this->settingsOption('hr'),
-                // $this->settingsOption('title', 'sonarrThrottlingTitle', ['text' => 'Sonarr Throttling']),
-                $this->settingsOption('select', 'sonarrExclusionTag', ['label' => 'Tag to exclude TV Shows', 'options' => $SonarrTagOptions]),
+                $this->settingsOption('hr'),
+                $this->settingsOption('title', 'sonarrThrottlingTitle', ['text' => 'Sonarr Throttling']),
                 $this->settingsOption('input', 'sonarrThrottlingSeasonThreshold', ['label' => 'Season Threshold', 'placeholder' => '4']),
                 $this->settingsOption('input', 'sonarrThrottlingEpisodeThreshold', ['label' => 'Episode Threshold', 'placeholder' => '40']),
                 $this->settingsOption('input', 'sonarrThrottlingEpisodeScanQty', ['label' => 'Amount of episodes to perform initial scan for', 'placeholder' => '10']),
+                $this->settingsOption('select', 'sonarrThrottlingTag', ['label' => 'Tag to use for Throttled TV Shows', 'options' => $SonarrTagOptions]),
+                $this->settingsOption('hr'),
+                $this->settingsOption('title', 'sonarrCleanupTitle', ['text' => 'Sonarr Cleanup']),
+                $this->settingsOption('select', 'sonarrCleanupExclusionTag', ['label' => 'Tag to exclude TV Shows from Cleanup', 'options' => $SonarrTagOptions]),
                 $this->settingsOption('input', 'sonarrCleanupEpisodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '10']),
-                $this->settingsOption('input', 'sonarrCleanupMaxAge', ['label' => 'Maximum number of days before TV Show is cleaned up', 'placeholder' => '180'])
+                $this->settingsOption('input', 'sonarrCleanupMaxAge', ['label' => 'Maximum number of days before TV Show is cleaned up', 'placeholder' => '180']),
+                $this->settingsOption('select', 'sonarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
+                    ['name' => 'Yes', 'value' => 'true'],
+                    ['name' => 'No', 'value' => 'false']
+                ]])
             ),
             'Radarr' => array(
                 $this->settingsOption('url', 'radarrUrl', ['label' => 'Radarr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password-alt', 'radarrApiKey', ['label' => 'Radarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'radarrApiVersion', ['label' => 'Radarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
+                $this->settingsOption('hr'),
+                $this->settingsOption('title', 'radarrCleanupTitle', ['text' => 'Radarr Cleanup']),
                 $this->settingsOption('select', 'radarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
                     ['name' => 'Yes', 'value' => 'true'],
                     ['name' => 'No', 'value' => 'false']
@@ -103,7 +105,7 @@ class MediaManager extends ib {
                 $this->settingsOption('cron', 'sonarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
                 $this->settingsOption('test', '/api/plugin/mediamanager/combined/tvshows/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
                 $this->settingsOption('checkbox', 'removeOrphanedTVShows', ['label' => 'Remove Orphaned Shows on Sync']),
-                $this->settingsOption('blank'),
+                $this->settingsOption('hr'),
                 $this->settingsOption('title', 'radarrSectionTitle', ['text' => 'Radarr & Tautulli Synchronisation']),
                 $this->settingsOption('cron', 'radarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
                 $this->settingsOption('test', '/api/plugin/mediamanager/combined/movies/update', ['label' => 'Synchronise Now', 'text' => 'Run', 'Method' => 'POST']),
@@ -207,9 +209,12 @@ class MediaManager extends ib {
     // Database Migration Script(s) for changes between versions
     public function migrationScripts() {
         return [
-        '1.0.5' => [],
-        '1.0.6' => [],
-        '1.0.7' => []
+            '1.0.5' => [],
+            '1.0.6' => [],
+            '1.0.7' => [
+                "ALTER TABLE tvshows ADD COLUMN sonarrId INTEGER", // Add Sonarr Series ID to DB
+                "ALTER TABLE movies ADD COLUMN radarrId INTEGER", // Add Radarr Movie ID to DB
+            ]
         ];
     }
 
@@ -238,6 +243,7 @@ class MediaManager extends ib {
             tvDbId INTEGER,
             ratingKey INTEGER,
             tags TEXT,
+            sonarrId INTEGER,
             clean BOOLEAN
 		)");
 
@@ -260,6 +266,7 @@ class MediaManager extends ib {
             imdbId INTEGER,
             ratingKey INTEGER,
             tags TEXT,
+            radarrId INTEGER,
             clean BOOLEAN
         )");
 
@@ -276,8 +283,8 @@ class MediaManager extends ib {
     public function updateTVShowTable() {
         $Shows = $this->queryAndMatchSonarrAndTautulli();
         if ($Shows) {
-            $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodeFileCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey, tags, clean) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodeFileCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey, :tags, :clean)';
-            $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodeFileCount = :episodeFileCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey, tags = :tags, clean = :clean WHERE title = :title';
+            $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodeFileCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey, tags, sonarrId, clean) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodeFileCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey, :tags, :sonarrId, :clean)';
+            $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodeFileCount = :episodeFileCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey, tags = :tags, sonarrId = :sonarrId, clean = :clean WHERE title = :title';
     
             // Track titles in $Shows
             $showTitles = array_column($Shows, 'title');
@@ -353,6 +360,7 @@ class MediaManager extends ib {
                         ':tvDbId' => $Show['tvdbId'],
                         ':ratingKey' => $Show['Tautulli']['rating_key'] ?? null,
                         ':tags' => implode(',',$Show['tags']) ?? null,
+                        ':sonarrId' => $Show['id'],
                         ':clean' => $Show['clean'] ?? false
                     ]);
                 } catch (Exception $e) {
@@ -434,7 +442,7 @@ class MediaManager extends ib {
     // Function to get TV Shows By tvDbId
     public function getTVShowsTableByTvDbId($TvDbId) {
         $stmt = $this->sql->prepare("SELECT * FROM tvshows WHERE tvDbId = :tvDbId");
-        $stmt->execute(['TvDbId' => $TvDbId]);
+        $stmt->execute(['tvDbId' => $TvDbId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result;
     }
@@ -443,8 +451,8 @@ class MediaManager extends ib {
     public function updateMoviesTable() {
         $Movies = $this->queryAndMatchRadarrAndTautulli();
         if ($Movies) {
-            $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey, tags, clean) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey, :tags, :clean)';
-            $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey, tags = :tags, clean = :clean WHERE title = :title';
+            $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey, tags, radarrId, clean) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey, :tags, :radarrId, :clean)';
+            $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey, tags = :tags, radarrId = :radarrId, clean = :clean WHERE title = :title';
     
             // Track titles in $Movies
             $movieTitles = array_column($Movies, 'title');
@@ -516,6 +524,7 @@ class MediaManager extends ib {
                         ':imdbId' => $Movie['imdbId'] ?? null,
                         ':ratingKey' => $Movie['Tautulli']['rating_key'] ?? null,
                         ':tags' => implode(',',$Movie['tags']) ?? null,
+                        ':radarrId' => $Movie['id'],
                         ':clean' => $Movie['clean'] ?? false
                     ]);
                 } catch (Exception $e) {
@@ -974,10 +983,9 @@ class MediaManager extends ib {
     // SONARR THROTTLING
     // **
 
-    public function TautulliWebhook($request)
-	{
+    public function sonarrThrottlingTautulliWebhook($request) {
 		## Get Throttled Tag
-		$ThrottledTag = $this->pluginConfig['sonarrThrottledTag'] ?? null;
+		$ThrottledTag = $this->pluginConfig['sonarrThrottlingTag'] ?? null;
 
 		## Error if Throttled tag is not set
 		if (empty($ThrottledTag)) {
@@ -1012,23 +1020,56 @@ class MediaManager extends ib {
 			$TvDbIdMatch = $this->getTVShowsTableByTvDbId($request['tvdbId']);
 
 			## Check if Sonarr ID Exists
-			if (empty($TvDbIdMatch['id'])) {
-                $this->api->setAPIResponse('Error', 'TV Show not in Sonarr database.');
-                $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Error: TV Show not in Sonarr database.","error",$request);
+			if (!empty($TvDbIdMatch['sonarrId'])) {
+                $Episodes = $this->getSonarrEpisodesBySeriesId($TvDbIdMatch['sonarrId']);
+
+                foreach ($Episodes as $Episode) {
+					if ($Episode['hasFile'] == false && $Episode['seasonNumber'] != "0" && $Episode['monitored'] == true) {
+						## Send Scan Request to Sonarr
+						$EpisodesToSearch[] = $Episode['id']; // Episode IDs
+						$SonarrSearchPostData['name'] = "EpisodeSearch";  // Sonarr command to run
+						$SonarrSearchPostData['episodeIds'] = $EpisodesToSearch; // Episode IDs Array
+						$SonarrSearchPostData = json_encode($SonarrSearchPostData); // POST Data
+						// $this->sonarrThrottlingPluginRunSonarrCommand($SonarrHost,$SonarrAPIKey,$SonarrSearchPostData);
+						$MoreEpisodesAvailable = true;
+						
+						$Response = 'Search request sent for: '.$TvDbIdMatch['title'].' - S'.$Episode['seasonNumber'].'E'.$Episode['episodeNumber'].' - '.$Episode['title'];
+                        $this->api->setAPIResponseMessage($Response);
+                        $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: Search Request Sent","info",[$Response]);
+						return true;
+					}
+				}
+				// if (empty($MoreEpisodesAvailable)) {
+				// 	## Find Throttled Tag and remove it
+				// 	$SonarrSeriesObjtags[] = $SonarrSeriesObj['tags'];
+				// 	$ArrKey = array_search($ThrottledTag, $SonarrSeriesObjtags[0]);
+				// 	unset($SonarrSeriesObjtags['0'][$ArrKey]);
+				// 	$SonarrSeriesObj['tags'] = $SonarrSeriesObjtags['0'];
+				// 	## Mark TV Show as Monitored
+				// 	$SonarrSeriesObj['monitored'] = true;
+				// 	## Submit data back to Sonarr
+				// 	$SonarrSeriesJSON = json_encode($SonarrSeriesObj); // Convert back to JSON
+				// 	$SonarrSeriesPUT = $this->sonarrThrottlingPluginSetSonarrSeries($SonarrHost,$SonarrAPIKey,$SeriesID,$SonarrSeriesJSON); // POST Data to Sonarr
+				// 	$Response = 'All aired episodes are available. Removed throttling from: '.$SonarrSeriesObj['title'].' and marked as monitored.';
+				// 	$this->setResponse(200, $Response);
+				// 	$this->logger->info('Tautulli Webhook: TV Show Full',$Response);
+				// 	return true;
+				// }
+
+			} else {
+                $this->api->setAPIResponse('Error', 'Sonarr ID Missing From Database.');
+                $this->logging->writeLog("SonarrThrottling","Sonarr ID Missing From Database: ".$TvDbIdMatch['title'],"error");
 				return false;
-			}
-				
-			## Query Sonarr Series API
-			$SonarrSeries = $this->getTVShowsTableByTvDbId($TvDbIdMatch['id']);
-				
+            }
+
 			## Query Sonarr Episode API
-			if (in_array($ThrottledTag,explode(',',$SonarrSeries['tags']))) {
+			if (in_array($ThrottledTag,explode(',',$TvDbIdMatch['tags']))) {
                 $this->api->setAPIResponse('Success', 'TV Show Throttled.');
-                $this->logging->writeLog("SonarrThrottling","TV Show Throttled: ".$SonarrSeries['title'],"info");
+                $this->logging->writeLog("SonarrThrottling","TV Show Throttled: ".$TvDbIdMatch['title'],"info");
 				return true;
 			} else {
                 $this->api->setAPIResponse('Success', 'TV Show Not Throttled.');
-                $this->logging->writeLog("SonarrThrottling","TV Show Not Throttled: ".$SonarrSeries['title'],"info");
+                $this->logging->writeLog("SonarrThrottling","TV Show Not Throttled: ".$TvDbIdMatch['title'],"info");
 				return true;
 			}
 		} else {
