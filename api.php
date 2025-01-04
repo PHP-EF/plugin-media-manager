@@ -107,9 +107,29 @@ $app->post('/plugin/mediamanager/combined/movies/update', function($request, $re
 // Tautulli Webhook
 $app->post('/plugin/mediamanager/sonarrthrottling/webhook/tautulli', function($request, $response, $args) {
     $MediaManager = new MediaManager();
-    if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+    $Headers = getallheaders();
+    if ((isset($Headers['Authorization']) && $Headers['Authorization'] == $MediaManager->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken']) || $MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $data = $MediaManager->api->getAPIRequestData($request);
         $Results = $MediaManager->sonarrThrottlingTautulliWebhook($data);
+        if ($Results) {
+            $MediaManager->api->setAPIResponseData($Results);
+        } else {
+            $MediaManager->api->setAPIResponse('Error',$Results);
+        }
+    }
+    $response->getBody()->write(jsonE($GLOBALS['api']));
+    return $response
+        ->withHeader('Content-Type', 'application/json;charset=UTF-8')
+        ->withStatus($GLOBALS['responseCode']);
+});
+
+// Overseerr Webhook
+$app->post('/plugin/mediamanager/sonarrthrottling/webhook/overseerr', function($request, $response, $args) {
+    $MediaManager = new MediaManager();
+    $Headers = getallheaders();
+    if ((isset($Headers['Authorization']) && $Headers['Authorization'] == $MediaManager->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken']) || $MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+        $data = $MediaManager->api->getAPIRequestData($request);
+        $Results = $MediaManager->sonarrThrottlingOverseerrWebhook($data);
         if ($Results) {
             $MediaManager->api->setAPIResponseData($Results);
         } else {
