@@ -924,7 +924,16 @@ class MediaManager extends ib {
             }
             return $Combined;
         } else {
-            $this->api->setAPIResponse('Error', 'Tautulli or Sonarr did not respond as expected.', null, []);
+            if (empty($GLOBALS['api']['message'])) {
+                $Faults = [];
+                if (!$Sonarr) {
+                    $Faults[] = "Sonarr";
+                }
+                if (!$Tautulli) {
+                    $Faults[] = "Tautulli";
+                }
+                $this->api->setAPIResponse('Error', implode(' & ',$Faults).' did not respond as expected.', null, []);
+            }
             return false;
         }
     }
@@ -989,7 +998,14 @@ class MediaManager extends ib {
             return $Combined;
         } else {
             if (empty($GLOBALS['api']['message'])) {
-                $this->api->setAPIResponse('Error', 'Tautulli or Radarr did not respond as expected.', null, []);
+                $Faults = [];
+                if (!$Radarr) {
+                    $Faults[] = "Radarr";
+                }
+                if (!$Tautulli) {
+                    $Faults[] = "Tautulli";
+                }
+                $this->api->setAPIResponse('Error', implode(' & ',$Faults).' did not respond as expected.', null, []);
             }
             return false;
         }
