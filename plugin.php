@@ -788,13 +788,18 @@ class MediaManager extends ib {
         return $Result;
     }
 
-    // Function to query list of TV Shows from Sonarr by Series ID
+    // Function to update a TV Show in Sonarr. Requires sonarr object to be submitted as a parameter.
     public function updateSonarrTVShow($data) {
         if ($data['id']) {
             $Result = $this->querySonarrAPI('PUT','series/'.$data['id'],$data);
-            return $Result;
+            if ($Result) {
+                return $Result;
+            } else {
+                $this->logging->writeLog("MediaManager","Failed to update Sonarr Series.","error",$data);
+                return false;
+            }
         } else {
-            $this->api->setAPIResponse('Error','id missing from sonarr series data');
+            $this->logging->writeLog("MediaManager","Failed to update Sonarr Series. id was missing from series data","error",$data);
             return false;
         }
     }
@@ -837,10 +842,12 @@ class MediaManager extends ib {
     // Radarr API Wrapper
     public function queryRadarrAPI($Method, $Uri, $Data = "", $Params = []) {
         if (!isset($this->pluginConfig['radarrUrl']) || empty($this->pluginConfig['radarrUrl'])) {
+            $this->logging->writeLog("MediaManager","Radarr URL Missing","error");
             $this->api->setAPIResponse('Error','Radarr URL Missing');
             return false;
         }
         if (!isset($this->pluginConfig['radarrApiKey']) || empty($this->pluginConfig['radarrApiKey'])) {
+            $this->logging->writeLog("MediaManager","Radarr API Key Missing","error");
             $this->api->setAPIResponse('Error','Radarr API Key Missing');
             return false;
         }
@@ -933,6 +940,7 @@ class MediaManager extends ib {
                     $Faults[] = "Tautulli";
                 }
                 $this->api->setAPIResponse('Error', implode(' & ',$Faults).' did not respond as expected.', null, []);
+                $this->logging->writeLog("MediaManager",implode(' & ',$Faults).' did not respond as expected.',"error");
             }
             return false;
         }
@@ -1006,6 +1014,7 @@ class MediaManager extends ib {
                     $Faults[] = "Tautulli";
                 }
                 $this->api->setAPIResponse('Error', implode(' & ',$Faults).' did not respond as expected.', null, []);
+                $this->logging->writeLog("MediaManager",implode(' & ',$Faults).' did not respond as expected.',"error");
             }
             return false;
         }
