@@ -1023,22 +1023,23 @@ class MediaManager extends ib {
 				return false;
 			}
 
-			## Search TV Shows Table for matching tvDbId
-			$SonarrSeriesFromDB = $this->getTVShowsTableByTvDbId($request['tvdbId']);
-
-            ## Retrieve Series from Sonarr
-            $SonarrSeries = $this->getSonarrTVShowById($SonarrSeriesFromDB['sonarrId']);
+			## Get Sonarr Series by tvdbId
+            $Params = [
+                'tvdbId' => $request['tvdbId']
+            ];
+			$SonarrSeriesLookup = $this->getSonarrTVShows($Params);
 
 			## Check if Sonarr Object Exists
-			if (isset($SonarrSeries)) {
+			if (isset($SonarrSeriesLookup[0])) {
+                $SonarrSeries = $SonarrSeriesLookup[0];
                 ## Check if TV Show is tagged as Throttled within Sonarr
                 if (!in_array($ThrottledTag,$SonarrSeries['tags'])) {
                     $this->api->setAPIResponseMessage('TV Show is not throttled');
-                    $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: TV Show is not throttled: ".$SonarrSeriesFromDB['title'],"info",$request);
+                    $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: TV Show is not throttled: ".$SonarrSeries['title'],"info",$request);
                     return false;
                 }
 
-                $Episodes = $this->getSonarrEpisodesBySeriesId($SonarrSeriesFromDB['sonarrId']);
+                $Episodes = $this->getSonarrEpisodesBySeriesId($SonarrSeries['id']);
 
                 // Find next available file to download
                 foreach ($Episodes as $Episode) {
@@ -1055,12 +1056,12 @@ class MediaManager extends ib {
                             // Mark more episodes as available
                             $MoreEpisodesAvailable = true;
                             
-                            $Response = 'Search request sent for: '.$SonarrSeriesFromDB['title'].' - S'.$Episode['seasonNumber'].'E'.$Episode['episodeNumber'].' - '.$Episode['title'];
+                            $Response = 'Search request sent for: '.$SonarrSeries['title'].' - S'.$Episode['seasonNumber'].'E'.$Episode['episodeNumber'].' - '.$Episode['title'];
                             $this->api->setAPIResponseMessage($Response);
                             $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: Search Request Sent","info",[$Response]);
                             return true;
                         } else {
-                            $Response = 'Failed to send search request for: '.$SonarrSeriesFromDB['title'].' - S'.$Episode['seasonNumber'].'E'.$Episode['episodeNumber'].' - '.$Episode['title'];
+                            $Response = 'Failed to send search request for: '.$SonarrSeries['title'].' - S'.$Episode['seasonNumber'].'E'.$Episode['episodeNumber'].' - '.$Episode['title'];
                             $this->api->setAPIResponse('Error',$Response);
                             $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: Failed to send Search Request","error",[$Response]);
                             return true;
@@ -1068,7 +1069,7 @@ class MediaManager extends ib {
 					}
 				}
                 // If no more episodes available (i.e show is full), mark as monitored and unthrottled.
-				if (empty($MoreEpisodesAvailable)) {
+				if (!$MoreEpisodesAvailable) {
                     if ($SonarrSeries) {
                         ## Find Throttled Tag and remove it
                         $ArrKey = array_search($ThrottledTag, $SonarrSeries['tags']);
@@ -1091,7 +1092,7 @@ class MediaManager extends ib {
                             return false;
                         }
                     } else {
-                        $Response = 'Failed to find series in Sonarr: '.$SonarrSeriesFromDB['title'];
+                        $Response = 'Failed to find series in Sonarr: '.$SonarrSeries['title'];
                         $this->api->setAPIResponse('Error',$Response);
                         $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: Failed to find series in Sonarr","error",[$Response]);
                         return false;
@@ -1099,7 +1100,7 @@ class MediaManager extends ib {
 				}
 			} else {
                 $this->api->setAPIResponse('Error', 'Sonarr ID Missing From Database.');
-                $this->logging->writeLog("SonarrThrottling","Sonarr ID Missing From Database: ".$SonarrSeriesFromDB['title'],"error");
+                $this->logging->writeLog("SonarrThrottling","Sonarr ID Missing From Database: ".$SonarrSeries['title'],"error");
 				return false;
             }
 		} else {
