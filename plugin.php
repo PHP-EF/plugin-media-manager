@@ -134,7 +134,7 @@ class MediaManager extends ib {
 
     // Generic Get API Results Function, to be shared across any API Wrappers
     private function getAPIResults($Method, $Url, $Data) {
-        if ($Method == "get") {
+        if (in_array($Method,["GET","get"])) {
             $Result = $this->api->query->$Method($Url,null,null,true);
         } else {
             $Result = $this->api->query->$Method($Url,$Data,null,null,true);
@@ -620,7 +620,18 @@ class MediaManager extends ib {
 
         $Url = $this->pluginConfig['tautulliUrl']."/api/v2?cmd=".$Cmd;
         $Url = $Url.'&apikey='.$this->pluginConfig['tautulliApiKey'];
-        return $this->getAPIResults($Method,$Url,$Data);
+        $Results = $this->getAPIResults($Method,$Url,$Data);
+        if (isset($Results['response'])) {
+            if (isset($Results['response']['data'])) {
+                return $Results['response']['data'];
+            } else {
+                $this->api->setAPIResponse($Results['response']['result'],$Results['response']['message']);
+                return false;
+            }
+        } else {
+            $this->api->setAPIResponse('Error','Tautulli did not return any data');
+            return false;
+        }
     }
 
     // Tautulli API Helper for building queries
@@ -701,7 +712,7 @@ class MediaManager extends ib {
                     'length' => 10000
                 );
                 $Result = $this->getTautulliMediaFromLibrary($Params);
-                
+
                 if (is_array($Result)) {
                     foreach ($Result['data'] as &$item) {
                         $item['library_name'] = $MovieLibrary['section_name']; // Add library name to each item
@@ -933,7 +944,7 @@ class MediaManager extends ib {
             $TautulliNormalizedTitle = $this->normalizeTitle($TautulliMovie['title']);
             $TautulliMoviesList[$TautulliNormalizedTitle] = $TautulliMovie;
         }
-    
+
         if ($Radarr && $Tautulli) {
             // Match Movies
             $Combined = [];
@@ -1240,7 +1251,6 @@ class MediaManager extends ib {
             $this->logging->writeLog('SonarrThrottling','Overseerr Webhook: Not a TV Show Request.','debug',$request);
             return false;
 		}
-
 	}
 }
 
