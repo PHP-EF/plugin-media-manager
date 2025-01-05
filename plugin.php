@@ -55,11 +55,57 @@ class MediaManager extends ib {
         }, $RadarrTags));
 
         return array(
-            'About' => array(
-                $this->settingsOption('notice', '', ['title' => 'Information', 'body' => '
-                <p>This plugin helps manage and clean up TV show folders in your Plex server environment. It integrates with Tautulli to track watched shows and applies custom cleanup rules to maintain a manageable library size.</p>
-                <br/>']),
-            ),
+            'About' => array (
+				$this->settingsOption('notice', 'about', ['title' => 'Plugin Information', 'body' => '
+                <p>This plugin helps manage and clean up TV show folders in your Plex server environment. It integrates with Sonarr, Radarr & Tautulli to track watched shows where custom cleanup rules are then applied to enable maintaining a manageable library size.</p>
+				<p>You can additionally configure Sonarr Throttling, which allows you to specify a threshold for TV Show sizes and throttles downloads accordingly. It works by configuring a webhook in Overseerr and Tautulli to manage TV Show episode downloading based on if episodes are being watched. Shows with seasons/episodes over a configured threshold will be marked as throttled and only the first X number of episodes will be downloaded. Further episodes will only be downloaded when an event is logged in Tautulli. Using this method prevents large TV Shows from being downloaded for nobody to watch them.</p>
+				<br/>
+				<h3>Tautulli Webhook</h3>
+				<p>Configure this Webhook in Tautulli. Using the <code>Playback Start</code> or <code>Watched</code> triggers will provide the best experience.</p>
+				<pre><code class="elip hidden-xs pb-1">/api/plugin/mediamanager/sonarrthrottling/webhooks/tautulli</code></pre>
+				<p>Tautulli JSON Data - This can be customised as long as <b>tvdbId</b> and <b>media_type</b> are present.</p>
+				<pre>
+{
+   "action": "{action}",
+    "title": "{title}",
+    "username": "{username}",
+    "media_type": "{media_type}",
+    "tvdbId": "{thetvdb_id}"
+}			</pre>
+				<p>Tautulli JSON Headers - API Key for Sonarr Throttling Plugin</p>
+				<pre>
+{
+	"authorization": "' . $this->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken'] . '"
+}				</pre>
+				<br/>
+				<h3>Overseerr Webhook</h3>
+				<p>Configure this Webhook in Overseerr</p>
+				<pre><code class="elip hidden-xs">/api/plugin/mediamanager/sonarrthrottling/webhooks/overseerr</code></pre>
+				<br/>
+				<p>Overseerr JSON Payload (Default Webhook) - This can be customised as long as <b>media->tvdbId</b> and <b>media->media_type</b> are present</p>
+				<pre>
+{
+    "notification_type": "{{notification_type}}",
+    "subject": "{{subject}}",
+    "message": "{{message}}",
+    "image": "{{image}}",
+    "email": "{{notifyuser_email}}",
+    "username": "{{notifyuser_username}}",
+    "avatar": "{{notifyuser_avatar}}",
+    "{{media}}": {
+        "media_type": "{{media_type}}",
+        "tmdbId": "{{media_tmdbid}}",
+        "imdbId": "{{media_imdbid}}",
+        "tvdbId": "{{media_tvdbid}}",
+        "status": "{{media_status}}",
+        "status4k": "{{media_status4k}}"
+    },
+    "{{extra}}": []
+}				</pre>
+				<p>Overseerr Authorization Header - API Key for Sonarr Throttling Plugin</p>
+				<pre><code>' . $this->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken'] . '</code></pre>
+				<br/>']),
+			),
             'Plugin' => array(
                 $this->settingsOption('auth', 'ACL-MEDIAMANAGER', ['label' => 'Media Manager Plugin Access ACL'])
             ),

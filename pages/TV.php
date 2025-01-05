@@ -7,15 +7,6 @@ if ($MediaManager->auth->checkAccess($pluginConfig['ACL-MEDIAMANAGER'] ?? null) 
 return '
 <div class="container-fluid">
     <div class="row m-1">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">TV Shows</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row m-1">
         <!-- TV Shows Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
             <div class="card info-card tv-shows-card">
@@ -84,9 +75,6 @@ return '
     <div class="row m-3">
         <!-- TV Shows List -->
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">TV Shows</h3>
-            </div>
             <div class="card-body">
                 <div class="table-responsive">
                 <table data-url="/api/plugin/mediamanager/combined/tvshows"
