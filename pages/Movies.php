@@ -2,7 +2,8 @@
 $MediaManager = new MediaManager();
 $pluginConfig = $MediaManager->config->get('Plugins','Media Manager');
 if ($MediaManager->auth->checkAccess($pluginConfig['ACL-MEDIAMANAGER'] ?? null) == false) {
-    die();
+    $ib->api->setAPIResponse('Error','Unauthorized',401);
+    return false;
 }
 return '
 <div class="container-fluid">
