@@ -147,6 +147,34 @@ class MediaManager extends ib {
                 $this->settingsOption('select', 'radarrExclusionTag', ['label' => 'Tag to exclude Movies', 'options' => $RadarrTagOptions]),
                 $this->settingsOption('input', 'radarrCleanupMaxAge', ['label' => 'Maximum number of days before Movie is cleaned up', 'placeholder' => '1095'])
             ),
+            'Plex' => array(
+				$this->settingsOption('js', 'pluginJs', ['src' => '/api/page/plugin/Media Manager/js']),
+				$this->settingsOption('js', 'pluginScript', ['script' => "
+				function getPlexHeaders(){
+					return {
+						'Accept': 'application/json',
+						'X-Plex-Product': 'PHP-EF',
+						'X-Plex-Version': '2.0',
+						'X-Plex-Client-Identifier': '".$this->config->get('System','uuid')."',
+						'X-Plex-Model': 'Plex OAuth',
+						// 'X-Plex-Platform': osName,
+						// 'X-Plex-Platform-Version': osVersion,
+						// 'X-Plex-Device': browserName,
+						// 'X-Plex-Device-Name': browserVersion,
+						'X-Plex-Device-Screen-Resolution': window.screen.width + 'x' + window.screen.height,
+						'X-Plex-Language': 'en'
+					};
+				}
+				"]),
+				$this->settingsOption('password-alt', 'plexToken', ['label' => 'Plex Authentication Token']),
+				$this->settingsOption('button', 'getPlexToken', ['label' => 'Get Plex Token', 'text' => 'Retrieve', 'attr' => 'onclick="PlexOAuth(oAuthSuccess,oAuthError, null, \'.modal-body [name=plexToken]\');"']),
+				$this->settingsOption('password-alt', 'plexID', ['label' => 'Plex Machine ID']),
+				$this->settingsOption('button', 'getPlexToken', ['label' => 'Get Machine ID', 'text' => 'Retrieve', 'attr' => 'onclick=\'toast("Warning","","Not implemented","warning");\'']),
+				$this->settingsOption('input', 'plexAdmin', ['label' => 'Plex Admin Username']),
+				$this->settingsOption('checkbox', 'plexAuthEnabled', ['label' => 'Enable Plex Authentication']),
+				$this->settingsOption('checkbox', 'plexAuthAutoCreate', ['label' => 'Auto-Create Plex Users']),
+				$this->settingsOption('checkbox', 'plexStrictFriends', ['label' => 'Only allow Plex Friends to login'])
+			),
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
                 $this->settingsOption('cron', 'sonarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
@@ -1326,3 +1354,139 @@ class MediaManager extends ib {
 }
 
 
+class PlexAuth extends ib {
+	private $pluginConfig;
+
+	public function __construct() {
+		parent::__construct();
+		$this->pluginConfig = $this->config->get('Plugins','Media Manager') ?? [];
+	}
+
+	public function _pluginGetSettings()
+	{
+		return array(
+			'Plugin Settings' => array(
+				$this->settingsOption('js', 'pluginJs', ['src' => '/api/page/plugin/PlexAuth/js']),
+				$this->settingsOption('js', 'pluginScript', ['script' => "
+				function getPlexHeaders(){
+					return {
+						'Accept': 'application/json',
+						'X-Plex-Product': 'PHP-EF',
+						'X-Plex-Version': '2.0',
+						'X-Plex-Client-Identifier': '".$this->config->get('System','uuid')."',
+						'X-Plex-Model': 'Plex OAuth',
+						// 'X-Plex-Platform': osName,
+						// 'X-Plex-Platform-Version': osVersion,
+						// 'X-Plex-Device': browserName,
+						// 'X-Plex-Device-Name': browserVersion,
+						'X-Plex-Device-Screen-Resolution': window.screen.width + 'x' + window.screen.height,
+						'X-Plex-Language': 'en'
+					};
+				}
+				"]),
+				$this->settingsOption('password-alt', 'plexToken', ['label' => 'Plex Authentication Token']),
+				$this->settingsOption('button', 'getPlexToken', ['label' => 'Get Plex Token', 'text' => 'Retrieve', 'attr' => 'onclick="PlexOAuth(oAuthSuccess,oAuthError, null, \'.modal-body [name=plexToken]\');"']),
+				$this->settingsOption('password-alt', 'plexID', ['label' => 'Plex Machine ID']),
+				$this->settingsOption('button', 'getPlexToken', ['label' => 'Get Machine ID', 'text' => 'Retrieve', 'attr' => 'onclick=\'toast("Warning","","Not implemented","warning");\'']),
+				$this->settingsOption('input', 'plexAdmin', ['label' => 'Plex Admin Username']),
+				$this->settingsOption('checkbox', 'plexAuthEnabled', ['label' => 'Enable Plex Authentication']),
+				$this->settingsOption('checkbox', 'plexAuthAutoCreate', ['label' => 'Auto-Create Plex Users']),
+				$this->settingsOption('checkbox', 'plexStrictFriends', ['label' => 'Only allow Plex Friends to login'])
+			)
+		);
+	}
+
+	public function oauth($data) {
+		return $this->checkPlexToken($data['token']);
+	}
+
+	public function checkPlexToken($token = '') {
+		$plexAuthEnabled = $this->pluginConfig['plexAuthEnabled'] ?? false;
+		$plexAuthAutoCreate = $this->pluginConfig['plexAuthAutoCreate'] ?? false;
+		$plexAdmin = $this->pluginConfig['plexAdmin'] ?? null;
+		if ($plexAuthEnabled) {
+			try {
+				if (($token !== '')) {
+					$Headers = array(
+						'X-Plex-Token' => $token,
+						'Content-Type' => 'application/json',
+						'Accept' => 'application/json'
+					);
+					$tokenResult = $this->api->query->get('https://plex.tv/users/account.json',$Headers);
+					if (isset($tokenResult['user'])) {
+						$tokenUser = array(
+							'Username' => $tokenResult['user']['username'],
+							'FirstName' => $tokenResult['user']['username'],
+							'LastName' => '',
+							'Email' => $tokenResult['user']['email'],
+							'Groups' => ''
+						);
+						if (strtolower($plexAdmin) == strtolower($tokenUser['Username']) || $this->checkPlexUser($tokenUser['Username'])) {
+							if ($this->auth->createUserIfNotExists($tokenUser,'Plex',$plexAuthAutoCreate,false)) {
+								return true;
+							} else {
+								$this->logging->writeLog('PlexAuth','User logged in successfully but auto-create users is disabled.','error',$tokenUser);
+								return false;
+							};
+						}
+					}
+				} else {
+					return false;
+				}
+			} catch (Exception $e) {
+				$this->logging->writeLog('PlexAuth','Failed to login with Plex','error',$e);
+			}
+		} else {
+			$this->logging->writeLog('PlexAuth','Plex Authentication is disabled','error');
+		}
+		return false;
+	}
+
+	private function checkPlexUser($username) {
+		$plexStrictFriends = $this->pluginConfig['plexStrictFriends'] ?? true;
+		$plexID = $this->pluginConfig['plexID'] ?? null;
+		$plexToken = $this->pluginConfig['plexToken'] ?? null;
+		try {
+			if (!empty($plexToken)) {
+				$Url = 'https://plex.tv/api/users';
+				$Headers = array(
+					'X-Plex-Token' => $plexToken,
+				);
+				$response = $this->api->query->get($Url, $Headers);
+
+				if ($response) {
+					libxml_use_internal_errors(true);
+					$userXML = simplexml_load_string($response->body);
+					if (is_array($userXML) || is_object($userXML)) {
+						$usernameLower = strtolower($username);
+						foreach ($userXML as $child) {
+							if (isset($child['username']) && strtolower($child['username']) == $usernameLower || isset($child['email']) && strtolower($child['email']) == $usernameLower) {
+								$this->logging->writeLog('Plex','Found User on Friends List','debug');
+								$machineMatches = false;
+								if ($plexStrictFriends) {
+									foreach ($child->Server as $server) {
+										if ((string)$server['machineIdentifier'] == $plexID) {
+											$machineMatches = true;
+										}
+									}
+								} else {
+									$machineMatches = true;
+								}
+								if ($machineMatches) {
+									$this->logging->writeLog('Plex','User Approved for Login','debug');
+									return true;
+								} else {
+									$this->logging->writeLog('Plex','User Not Approved for Login','debug');
+								}
+							}
+						}
+					}
+				}
+			}
+			return false;
+		} catch (Exception $e) {
+			$this->logging->writeLog('PlexAuth','Failed to check Plex User','error',$e);
+		}
+		return false;
+	}
+}

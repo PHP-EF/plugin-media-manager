@@ -93,3 +93,186 @@ $("#tvShowsTable").bootstrapTable();
 
 // Initate Movies Table
 $("#moviesTable").bootstrapTable();
+
+
+
+
+
+
+
+
+// ** PLEX AUTH ** //
+var plex_oauth_window = null;
+const plex_oauth_loader = '<style>' +
+    '.login-loader-container {' +
+    'font-family: "Open Sans", Arial, sans-serif;' +
+    'position: absolute;' +
+    'top: 0;' +
+    'right: 0;' +
+    'bottom: 0;' +
+    'left: 0;' +
+    '}' +
+    '.login-loader-message {' +
+    'color: #282A2D;' +
+    'text-align: center;' +
+    'position: absolute;' +
+    'left: 50%;' +
+    'top: 25%;' +
+    'transform: translate(-50%, -50%);' +
+    '}' +
+    '.login-loader {' +
+    'border: 5px solid #ccc;' +
+    '-webkit-animation: spin 1s linear infinite;' +
+    'animation: spin 1s linear infinite;' +
+    'border-top: 5px solid #282A2D;' +
+    'border-radius: 50%;' +
+    'width: 50px;' +
+    'height: 50px;' +
+    'position: relative;' +
+    'left: calc(50% - 25px);' +
+    '}' +
+    '@keyframes spin {' +
+    '0% { transform: rotate(0deg); }' +
+    '100% { transform: rotate(360deg); }' +
+    '}' +
+    '</style>' +
+    '<div class="login-loader-container">' +
+    '<div class="login-loader-message">' +
+    '<div class="login-loader"></div>' +
+    '<br>' +
+    'Redirecting to the login page...' +
+    '</div>' +
+    '</div>';
+function closePlexOAuthWindow() {
+    if (plex_oauth_window) {
+        plex_oauth_window.close();
+    }
+}
+getPlexOAuthPin = function () {
+    var x_plex_headers = getPlexHeaders();
+    var deferred = $.Deferred();
+    $.ajax({
+        url: 'https://plex.tv/api/v2/pins?strong=true',
+        type: 'POST',
+        headers: x_plex_headers,
+        success: function(data) {
+            deferred.resolve({pin: data.id, code: data.code});
+        },
+        error: function() {
+            closePlexOAuthWindow();
+            deferred.reject();
+        }
+    });
+    return deferred;
+};
+var polling = null;
+function PlexOAuth(success, error, pre, id = null) {
+    if (typeof pre === "function") {
+        pre()
+    }
+    closePlexOAuthWindow();
+    plex_oauth_window = newPopup('', 'Plex-OAuth', 600, 700);
+    $(plex_oauth_window.document.body).html(plex_oauth_loader);
+    getPlexOAuthPin().then(function (data) {
+        var x_plex_headers = getPlexHeaders();
+        const pin = data.pin;
+        const code = data.code;
+        var oauth_params = {
+            'clientID': x_plex_headers['X-Plex-Client-Identifier'],
+            'context[device][product]': x_plex_headers['X-Plex-Product'],
+            'context[device][version]': x_plex_headers['X-Plex-Version'],
+            // 'context[device][platform]': x_plex_headers['X-Plex-Platform'],
+            // 'context[device][platformVersion]': x_plex_headers['X-Plex-Platform-Version'],
+            // 'context[device][device]': x_plex_headers['X-Plex-Device'],
+            // 'context[device][deviceName]': x_plex_headers['X-Plex-Device-Name'],
+            'context[device][model]': x_plex_headers['X-Plex-Model'],
+            'context[device][screenResolution]': x_plex_headers['X-Plex-Device-Screen-Resolution'],
+            'context[device][layout]': 'desktop',
+            'code': code
+        };
+        plex_oauth_window.location = 'https://app.plex.tv/auth/#!?' + encodeData(oauth_params);
+        polling = pin;
+        (function poll() {
+            $.ajax({
+                url: 'https://plex.tv/api/v2/pins/' + pin,
+                type: 'GET',
+                headers: x_plex_headers,
+                success: function (data) {
+                    if (data.authToken){
+                        closePlexOAuthWindow();
+                        if (typeof success === "function") {
+                            success('plex',data.authToken, id)
+                        }
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    if (textStatus !== "timeout") {
+                        closePlexOAuthWindow();
+                        if (typeof error === "function") {
+                            error()
+                        }
+                    }
+                },
+                complete: function () {
+                    if (!plex_oauth_window.closed && polling === pin){
+                        setTimeout(function() {poll()}, 1000);
+                    }
+                },
+                timeout: 10000
+            });
+        })();
+    }, function () {
+        closePlexOAuthWindow();
+        if (typeof error === "function") {
+            error()
+        }
+    });
+}
+function openOAuth(provider){
+	// will actually fix this later
+	closePlexOAuthWindow();
+	plex_oauth_window = newPopup('', 'OAuth', 600, 700);
+	$(plex_oauth_window.document.body).html(plex_oauth_loader);
+	plex_oauth_window.location = 'api/v2/oauth/trakt';
+}
+function encodeData(data) {
+    return Object.keys(data).map(function(key) {
+        return [key, data[key]].map(encodeURIComponent).join("=");
+    }).join("&");
+}
+function oAuthSuccess(type,token, id = null){
+    switch(type) {
+        case 'plex':
+            if(id){
+		        $(id).val(token);
+		        $(id).change();
+                toast('PlexAuth','','Successfully grabbed Plex Authentication Token','success',30000)
+	        } else {
+                queryAPI('POST','/api/plugin/plexauth/oauth',{"token": token}).done(function(data) {
+                    if (data['result'] == 'Success') {
+                        window.location.replace(data['data']['location']);
+                    } else if (data['result'] == 'Error') {
+                        toast(data['result'],'',data['message'],'danger',30000)
+                    }
+                })
+            }
+            break;
+        default:
+            break;
+    }
+}
+function oAuthError(){
+    toast('Error','','Error Connecting to oAuth Provider','error','10000');
+}
+function oAuthStart(type){
+    switch(type){
+        case 'plex':
+            PlexOAuth(oAuthSuccess,oAuthError);
+            break;
+        default:
+            break;
+    }
+}
+$('.plexOAuth').on('click', function() {
+    oAuthStart('plex');
+});
