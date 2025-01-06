@@ -126,13 +126,23 @@ trait Tautulli {
     }
 
     public function initiateTautulliSSO($data) {
-        $Url = $this->pluginConfig['tautulliUrl']."/auth/signin";
-        $Results = $this->api->query->post($Url,$data,array('Content-Type' => 'x-www-form-urlencoded'),null,true);
-        if (isset($Results)) {
-            return $Results;
+        $Enabled = $this->pluginConfig['tautulliEnableSSO'] ?? false;
+        if ($Enabled) {
+            $Url = $this->pluginConfig['tautulliUrl']."/auth/signin";
+            $HeadersArr = array(
+                'Content-Type' => 'application/x-www-form-urlencoded'
+            );
+            $Results = $this->api->query->post($Url,$data,$HeadersArr);
+            if (isset($Results) && isset($Results['status']) && $Results['status'] == 'success') {
+                if (isset($Results['token']) && isset($Results['uuid'])) {
+                    setcookie('tautulli_token_'.$Results['uuid'], $Results['token'], time() + (86400 * 30), "/"); // 30 days
+                }
+                return $Results;
+            } else {
+                return false;
+            }
         } else {
-            $this->api->setAPIResponse('Error','Tautulli SSO did not return any data');
-            return false;
+            return true;
         }
     }
 }
