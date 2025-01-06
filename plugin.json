@@ -8,7 +8,7 @@
     "icon": "https://raw.githubusercontent.com/TehMuffinMoo/php-ef-plugin-example/main/logo.png",
     "contact": "https://github.com/tinytechlabuk/php-ef-media-manager/issues",
     "link": "https://github.com/tinytechlabuk/php-ef-media-manager",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "minimum_php-ef_version": "0.7.3",
     "release_date": "2024-12-31",
     "last_updated": "2025-01-02",
