@@ -46,7 +46,12 @@ trait Database {
                 "ALTER TABLE movies ADD COLUMN radarrId INTEGER", // Add Radarr Movie ID to DB
             ],
             '1.0.8' => [],
-            '1.0.9' => []
+            '1.0.9' => [],
+            '1.1.0' => [],
+            '1.1.1' => [],
+            '1.1.2' => [],
+            '1.1.3' => [],
+            '1.1.4' => []
         ];
     }
 
