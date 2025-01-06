@@ -48,7 +48,7 @@ trait Radarr {
         // Decode JSON data into PHP arrays
         $Radarr = $this->getRadarrMovies();
         $Tautulli = $this->getTautulliMovies();
-    
+
         // Create an associative array for quick lookup from Tautulli data
         $TautulliMoviesList = [];
         foreach ($Tautulli as $TautulliMovie) {
@@ -66,7 +66,7 @@ trait Radarr {
                 if ($RadarrMovie['hasFile']) {
                     // Normalize title
                     $RadarrNormalizedTitle = $this->normalizeTitle($RadarrMovie['title']);
-        
+
                     // Check primary title
                     if (isset($TautulliMoviesList[$RadarrNormalizedTitle])) {
                         $TautulliMovie = $TautulliMoviesList[$RadarrNormalizedTitle];
@@ -85,7 +85,7 @@ trait Radarr {
                 } else {
                     $RadarrMovie['MatchStatus'] = 'No Files';
                 }
-    
+
                 if ($TautulliMovie) {
                     $RadarrMovie['Tautulli'] = $TautulliMovie;
                     $RadarrMovie['MatchStatus'] = 'Matched';

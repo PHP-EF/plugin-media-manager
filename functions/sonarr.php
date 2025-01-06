@@ -84,7 +84,7 @@ trait Sonarr {
         } catch (Requests_Exception $e) {
             $this->logging->writeLog('Sonarr','Unable to run Sonarr command','error',$e);
             return false;
-        }	
+        }
     }
 
     // **
@@ -95,14 +95,14 @@ trait Sonarr {
         // Decode JSON data into PHP arrays
         $Sonarr = $this->getSonarrTVShows();
         $Tautulli = $this->getTautulliTVShows();
-    
+
         // Create an associative array for quick lookup from Tautulli data
         $TautulliShowsList = [];
         foreach ($Tautulli as $TautulliShow) {
             $TautulliNormalizedTitle = $this->normalizeTitle($TautulliShow['title']);
             $TautulliShowsList[$TautulliNormalizedTitle] = $TautulliShow;
         }
-    
+
         if ($Sonarr && $Tautulli) {
             // Match TV shows
             $Combined = [];
@@ -113,7 +113,7 @@ trait Sonarr {
                 if ($SonarrShow['statistics']['episodeFileCount'] > 0) {
                     // Normalize title
                     $SonarrNormalizedTitle = $this->normalizeTitle($SonarrShow['title']);
-        
+
                     // Check primary title
                     if (isset($TautulliShowsList[$SonarrNormalizedTitle])) {
                         $TautulliShow = $TautulliShowsList[$SonarrNormalizedTitle];
@@ -132,7 +132,7 @@ trait Sonarr {
                 } else {
                     $SonarrShow['MatchStatus'] = 'No Episodes';
                 }
-    
+
                 if ($TautulliShow) {
                     $SonarrShow['Tautulli'] = $TautulliShow;
                     $SonarrShow['MatchStatus'] = 'Matched';
@@ -166,46 +166,46 @@ trait Sonarr {
     // **
 
     public function sonarrThrottlingTautulliWebhook($request) {
-		## Get Throttled Tag
-		$ThrottledTag = $this->pluginConfig['sonarrThrottlingTag'] ?? null;
+        ## Get Throttled Tag
+        $ThrottledTag = $this->pluginConfig['sonarrThrottlingTag'] ?? null;
 
-		## Error if Throttled tag is not set
-		if (empty($ThrottledTag)) {
-			$this->api->setAPIResponse('Error', 'Throttling tag is missing, check logs.');
+        ## Error if Throttled tag is not set
+        if (empty($ThrottledTag)) {
+            $this->api->setAPIResponse('Error', 'Throttling tag is missing, check logs.');
             $this->logging->writeLog("SonarrThrottling","Throttling tag is missing or not set","error");
-			return false;
-		}
-			
-		## Check for valid data and API Key
-		if ($request == null) {
-			$this->api->setAPIResponse('Error', 'Tautulli Webhook Request Empty.');
-            $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Request Empty","error");
-			return false;
-		}
-	
-		## Check for test notification
-		if (isset($request['test_notification'])) {
-			$this->api->setAPIResponseMessage('Tautulli Webhook Test Successful.');
-            $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Test Received","notice",$request);
-			return true;
-		}
+            return false;
+        }
 
-		if ($request['media_type'] == "episode") {
-			## Check tvdbId exists
-			if (empty($request['tvdbId'])) {
+        ## Check for valid data and API Key
+        if ($request == null) {
+            $this->api->setAPIResponse('Error', 'Tautulli Webhook Request Empty.');
+            $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Request Empty","error");
+            return false;
+        }
+
+        ## Check for test notification
+        if (isset($request['test_notification'])) {
+            $this->api->setAPIResponseMessage('Tautulli Webhook Test Successful.');
+            $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Test Received","notice",$request);
+            return true;
+        }
+
+        if ($request['media_type'] == "episode") {
+            ## Check tvdbId exists
+            if (empty($request['tvdbId'])) {
                 $this->api->setAPIResponse('Error', 'Empty tvdbId.');
                 $this->logging->writeLog("SonarrThrottling","Tautulli Webhook Error: Empty tvdbId","error",$request);
-				return false;
-			}
+                return false;
+            }
 
-			## Get Sonarr Series by tvdbId
+            ## Get Sonarr Series by tvdbId
             $Params = [
                 'tvdbId' => $request['tvdbId']
             ];
-			$SonarrSeriesLookup = $this->getSonarrTVShows($Params);
+            $SonarrSeriesLookup = $this->getSonarrTVShows($Params);
 
-			## Check if Sonarr Object Exists
-			if (isset($SonarrSeriesLookup[0])) {
+            ## Check if Sonarr Object Exists
+            if (isset($SonarrSeriesLookup[0])) {
                 $SonarrSeries = $SonarrSeriesLookup[0];
                 ## Check if TV Show is tagged as Throttled within Sonarr
                 if (!in_array($ThrottledTag,$SonarrSeries['tags'])) {
@@ -218,19 +218,19 @@ trait Sonarr {
 
                 // Find next available file to download
                 foreach ($Episodes as $Episode) {
-					if ($Episode['hasFile'] == false && $Episode['seasonNumber'] != "0" && $Episode['monitored'] == true) {
+                    if ($Episode['hasFile'] == false && $Episode['seasonNumber'] != "0" && $Episode['monitored'] == true) {
                         // Set Episode ID to search for
-						$cmd = [
+                        $cmd = [
                             'episodeIds' => [
                                 $Episode['id']
                             ],
                             'name' => 'episodeSearch'
                         ];
                         // Send Scan Request to Sonarr
-						if ($this->runSonarrCommand($cmd)) {
+                        if ($this->runSonarrCommand($cmd)) {
                             // Mark more episodes as available
                             $MoreEpisodesAvailable = true;
-                            
+
                             $Response = 'Search request sent for: '.$SonarrSeries['title'].' - S'.$Episode['seasonNumber'].'E'.$Episode['episodeNumber'].' - '.$Episode['title'];
                             $this->api->setAPIResponseMessage($Response);
                             $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: Search Request Sent","info",[$Response]);
@@ -241,10 +241,10 @@ trait Sonarr {
                             $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: Failed to send Search Request","error",[$Response]);
                             return true;
                         }
-					}
-				}
+                    }
+                }
                 // If no more episodes available (i.e show is full), mark as monitored and unthrottled.
-				if (!$MoreEpisodesAvailable) {
+                if (!$MoreEpisodesAvailable) {
                     if ($SonarrSeries) {
                         ## Find Throttled Tag and remove it
                         $ArrKey = array_search($ThrottledTag, $SonarrSeries['tags']);
@@ -272,70 +272,70 @@ trait Sonarr {
                         $this->logging->writeLog("SonarrThrottling","Tautulli Webhook: Failed to find series in Sonarr","error",[$Response]);
                         return false;
                     }
-				}
-			} else {
+                }
+            } else {
                 $this->api->setAPIResponse('Error', 'Sonarr ID Missing From Database.');
                 $this->logging->writeLog("SonarrThrottling","Sonarr ID Missing From Database: ".$SonarrSeries['title'],"error");
-				return false;
+                return false;
             }
-		} else {
+        } else {
             $this->api->setAPIResponseMessage('Not a TV Show');
             $this->logging->writeLog("SonarrThrottling","Not a TV Show","info");
             return true;
-		}
-	}
+        }
+    }
 
     public function sonarrThrottlingOverseerrWebhook($request) {
-		## Get Throttled Tag
-		$ThrottledTag = $this->pluginConfig['sonarrThrottlingTag'] ?? null;
+        ## Get Throttled Tag
+        $ThrottledTag = $this->pluginConfig['sonarrThrottlingTag'] ?? null;
 
-		## Error if Throttled tag is not set
-		if (empty($ThrottledTag)) {
-			$this->api->setAPIResponse('Error', 'Throttling tag is missing, check logs.');
+        ## Error if Throttled tag is not set
+        if (empty($ThrottledTag)) {
+            $this->api->setAPIResponse('Error', 'Throttling tag is missing, check logs.');
             $this->logging->writeLog("SonarrThrottling","Throttling tag is missing or not set","error");
-			return false;
-		}
-			
-		## Check for valid data and API Key
-		if ($request == null) {
-			$this->api->setAPIResponse('Error', 'Overseerr Webhook Request Empty.');
-            $this->logging->writeLog("SonarrThrottling","Overseerr Webhook Request Empty","error");
-			return false;
-		}
-	
-		## Check for test notification
-		if ($request['notification_type'] == "TEST_NOTIFICATION") {
-			$this->api->setAPIResponseMessage('Overseerr Webhook Test Successful.');
-            $this->logging->writeLog("SonarrThrottling","Overseerr Webhook Test Received","notice",$request);
-			return true;
-		}
+            return false;
+        }
 
-		## Check Request Type
-		if ($request['media']['media_type'] == "tv") {
-			
-			## Check tvdbId exists
-			if (empty($request['media']['tvdbId'])) {
+        ## Check for valid data and API Key
+        if ($request == null) {
+            $this->api->setAPIResponse('Error', 'Overseerr Webhook Request Empty.');
+            $this->logging->writeLog("SonarrThrottling","Overseerr Webhook Request Empty","error");
+            return false;
+        }
+
+        ## Check for test notification
+        if ($request['notification_type'] == "TEST_NOTIFICATION") {
+            $this->api->setAPIResponseMessage('Overseerr Webhook Test Successful.');
+            $this->logging->writeLog("SonarrThrottling","Overseerr Webhook Test Received","notice",$request);
+            return true;
+        }
+
+        ## Check Request Type
+        if ($request['media']['media_type'] == "tv") {
+
+            ## Check tvdbId exists
+            if (empty($request['media']['tvdbId'])) {
                 $this->api->setAPIResponse('Error', 'Empty tvdbId.');
                 $this->logging->writeLog("SonarrThrottling","Overseerr Webhook Error: Empty tvdbId","error",$request);
-				return false;
-			}
+                return false;
+            }
 
             // ** REWORK THIS
-			## Sleep to allow Sonarr to update. Might add a loop checking logic here in the future.
-			// sleep(10);
+            ## Sleep to allow Sonarr to update. Might add a loop checking logic here in the future.
+            // sleep(10);
 
-			## Lookup Sonarr Series by tvdbId
+            ## Lookup Sonarr Series by tvdbId
             $Params = [
                 'tvdbId' => $request['media']['tvdbId']
             ];
-			$SonarrLookupObj = $this->getSonarrTVShows($Params);
-			
+            $SonarrLookupObj = $this->getSonarrTVShows($Params);
+
             ## Check if Sonarr Object Exists
-			if (!isset($SonarrLookupObj[0])) {
+            if (!isset($SonarrLookupObj[0])) {
                 $this->api->setAPIResponse('Error', 'TV Show not in Sonarr database.');
-				$this->logging->writeLog('SonarrThrottling','Overseerr Webhook Error: TV Show not in Sonarr database.','error',$Params);
-				return false;
-			} else {
+                $this->logging->writeLog('SonarrThrottling','Overseerr Webhook Error: TV Show not in Sonarr database.','error',$Params);
+                return false;
+            } else {
                 // Grab Sonarr Object
                 $SonarrLookupItem = $SonarrLookupObj[0];
 
@@ -409,11 +409,11 @@ trait Sonarr {
                         return false;
                     }
                 }
-            }				
-		} else {
+            }
+        } else {
             $this->api->setAPIResponse('Error', 'Not a TV Show.');
             $this->logging->writeLog('SonarrThrottling','Overseerr Webhook: Not a TV Show Request.','debug',$request);
             return false;
-		}
-	}
+        }
+    }
 }

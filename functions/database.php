@@ -4,28 +4,28 @@ trait Database {
     // DATABASE
     // **
 
-	// Check if Database & Tables Exist
-	private function hasDB() {
-		if ($this->sql) {
-			try {
-				// Query to check if both tables exist
-				$result = $this->sql->query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tvshows','movies','options')");
-				$tables = $result->fetchAll(PDO::FETCH_COLUMN);
-			
-				if (in_array('tvshows', $tables) && in_array('movies', $tables) && in_array('options', $tables)) {
-					return true;
-				} else {
-					$this->createMediaManagerTables();
-				}
-			} catch (PDOException $e) {
-				$this->api->setAPIResponse("Error",$e->getMessage());
-				return false;
-			}
-		} else {
-			$this->api->setAPIResponse("Error","Database Not Initialized");
-			return false;
-		}
-	}
+    // Check if Database & Tables Exist
+    private function hasDB() {
+        if ($this->sql) {
+            try {
+                // Query to check if both tables exist
+                $result = $this->sql->query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tvshows','movies','options')");
+                $tables = $result->fetchAll(PDO::FETCH_COLUMN);
+
+                if (in_array('tvshows', $tables) && in_array('movies', $tables) && in_array('options', $tables)) {
+                    return true;
+                } else {
+                    $this->createMediaManagerTables();
+                }
+            } catch (PDOException $e) {
+                $this->api->setAPIResponse("Error",$e->getMessage());
+                return false;
+            }
+        } else {
+            $this->api->setAPIResponse("Error","Database Not Initialized");
+            return false;
+        }
+    }
 
     // Initiate Database Migration if required
     private function checkDB() {
@@ -50,23 +50,23 @@ trait Database {
         ];
     }
 
-	// Create Media Manager Tables
-	private function createMediaManagerTables() {
-		$this->sql->exec("CREATE TABLE IF NOT EXISTS tvshows (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			title TEXT UNIQUE,
-			monitored BOOLEAN,
-			status TEXT,
-			matchStatus TEXT,
-			seasonCount INTEGER,
-			episodeCount INTEGER,
+    // Create Media Manager Tables
+    private function createMediaManagerTables() {
+        $this->sql->exec("CREATE TABLE IF NOT EXISTS tvshows (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT UNIQUE,
+            monitored BOOLEAN,
+            status TEXT,
+            matchStatus TEXT,
+            seasonCount INTEGER,
+            episodeCount INTEGER,
             episodeFileCount INTEGER,
-			episodesDownloadedPercentage INTEGER,
+            episodesDownloadedPercentage INTEGER,
             sizeOnDisk INTEGER,
             seriesType TEXT,
             last_played INTEGER,
             added TEXT,
-			play_count INTEGER,
+            play_count INTEGER,
             library TEXT,
             library_id INTEGER,
             path TEXT,
@@ -77,7 +77,7 @@ trait Database {
             tags TEXT,
             sonarrId INTEGER,
             clean BOOLEAN
-		)");
+        )");
 
         $this->sql->exec("CREATE TABLE IF NOT EXISTS movies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,7 +109,7 @@ trait Database {
         )");
 
         $this->sql->exec('INSERT INTO options (Key,Value) VALUES ("dbVersion","'.$GLOBALS['plugins']['Media Manager']['version'].'");');
-	}
+    }
 
     // Function to update the TV Shows Table (Synchronisation)
     public function updateTVShowTable() {
@@ -117,17 +117,17 @@ trait Database {
         if ($Shows) {
             $InsertPrepare = 'INSERT INTO tvshows (title, monitored, status, matchStatus, seasonCount, episodeCount, episodeFileCount, episodesDownloadedPercentage, sizeOnDisk, seriesType, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, tvDbId, ratingKey, tags, sonarrId, clean) VALUES (:title, :monitored, :status, :matchStatus, :seasonCount, :episodeCount, :episodeFileCount, :episodesDownloadedPercentage, :sizeOnDisk, :seriesType, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :tvDbId, :ratingKey, :tags, :sonarrId, :clean)';
             $UpdatePrepare = 'UPDATE tvshows SET monitored = :monitored, status = :status, matchStatus = :matchStatus, seasonCount = :seasonCount, episodeCount = :episodeCount, episodeFileCount = :episodeFileCount, episodesDownloadedPercentage = :episodesDownloadedPercentage, sizeOnDisk = :sizeOnDisk, seriesType = :seriesType, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, tvDbId = :tvDbId, ratingKey = :ratingKey, tags = :tags, sonarrId = :sonarrId, clean = :clean WHERE title = :title';
-    
+
             // Track titles in $Shows
             $showTitles = array_column($Shows, 'title');
-    
+
             foreach ($Shows as $Show) {
                 try {
                     // Check if the show exists
                     $stmt = $this->sql->prepare('SELECT COUNT(*) FROM tvshows WHERE title = :title');
                     $stmt->execute([':title' => $Show['title']]);
                     $exists = $stmt->fetchColumn();
-    
+
                     if ($exists) {
                         // Update existing record
                         $stmt = $this->sql->prepare($UpdatePrepare);
@@ -149,7 +149,7 @@ trait Database {
                                 $LastPlayedEpoch = $Show['Tautulli']['last_played'] ?? false;
                             }
                         }
-                        
+
                         if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['sonarrCleanupMaxAge'])) {
                             if ($LastPlayedEpoch) {
                                 // Check if it has been watched in longer than X days ago
@@ -168,7 +168,7 @@ trait Database {
                             'message' => $e
                         );
                     }
-    
+
                     // Bind parameters and execute
                     $stmt->execute([
                         ':title' => $Show['title'],
@@ -203,7 +203,7 @@ trait Database {
                     );
                 }
             }
-    
+
             // Update 'MatchStatus' to 'Orphaned' for shows not in $Shows but present in the database
             try {
                 $removeOrphaned = $this->config->get('Plugins','Media Manager')['removeOrphanedTVShows'] ?? false;
@@ -221,7 +221,7 @@ trait Database {
                     'message' => $e
                 );
             }
-    
+
             $this->logging->writeLog("MediaManager","Synchronised with Sonarr & Tautulli Successfully.","info");
             return array(
                 'result' => 'Success',
@@ -278,24 +278,24 @@ trait Database {
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result;
     }
-    
+
     // Function to update the Movies Table (Synchronisation)
     public function updateMoviesTable() {
         $Movies = $this->queryAndMatchRadarrAndTautulli();
         if ($Movies) {
             $InsertPrepare = 'INSERT INTO movies (title, monitored, status, matchStatus, hasFile, sizeOnDisk, last_played, added, play_count, library, library_id, path, rootFolder, titleSlug, imdbId, ratingKey, tags, radarrId, clean) VALUES (:title, :monitored, :status, :matchStatus, :hasFile, :sizeOnDisk, :last_played, :added, :play_count, :library, :library_id, :path, :rootFolder, :titleSlug, :imdbId, :ratingKey, :tags, :radarrId, :clean)';
             $UpdatePrepare = 'UPDATE movies SET monitored = :monitored, status = :status, matchStatus = :matchStatus, hasFile = :hasFile, sizeOnDisk = :sizeOnDisk, last_played = :last_played, added = :added, play_count = :play_count, library = :library, library_id = :library_id, path = :path, rootFolder = :rootFolder, titleSlug = :titleSlug, imdbId = :imdbId, ratingKey = :ratingKey, tags = :tags, radarrId = :radarrId, clean = :clean WHERE title = :title';
-    
+
             // Track titles in $Movies
             $movieTitles = array_column($Movies, 'title');
-    
+
             foreach ($Movies as $Movie) {
                 try {
                     // Check if the show exists
                     $stmt = $this->sql->prepare('SELECT COUNT(*) FROM movies WHERE title = :title');
                     $stmt->execute([':title' => $Movie['title']]);
                     $exists = $stmt->fetchColumn();
-    
+
                     if ($exists) {
                         // Update existing record
                         $stmt = $this->sql->prepare($UpdatePrepare);
@@ -317,7 +317,7 @@ trait Database {
                                 $LastPlayedEpoch = $Movie['Tautulli']['last_played'] ?? false;
                             }
                         }
-                        
+
                         if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['radarrCleanupMaxAge'])) {
                             if ($LastPlayedEpoch) {
                                 // Check if it has been watched in longer than X days ago
@@ -336,7 +336,7 @@ trait Database {
                             'message' => $e
                         );
                     }
-    
+
                     // Bind parameters and execute
                     $stmt->execute([
                         ':title' => $Movie['title'],
@@ -367,7 +367,7 @@ trait Database {
                     );
                 }
             }
-    
+
             // Update 'MatchStatus' to 'Orphaned' for shows not in $Shows but present in the database
             try {
                 $removeOrphaned = $this->config->get('Plugins','Media Manager')['removeOrphanedMovies'] ?? false;
@@ -385,7 +385,7 @@ trait Database {
                     'message' => $e
                 );
             }
-    
+
             $this->logging->writeLog("MediaManager","Synchronised with Radarr & Tautulli Successfully.","info");
             return array(
                 'result' => 'Success',
