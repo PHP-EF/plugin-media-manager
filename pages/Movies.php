@@ -118,51 +118,5 @@ return '
             </div>
         </div>
     </div>
-    <div class="row m-3">
-        <!-- Activity Log Card -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h3 class="card-title">Activity Log</h3>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Show Name</th>
-                                <th>Action</th>
-                                <th>Details</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="activityLog">
-                            <!-- Activity logs will be inserted here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Cleanup Confirmation Modal -->
-<div class="modal fade" id="cleanupModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Cleanup</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="cleanupDetails">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmCleanup()">Confirm Cleanup</button>
-            </div>
-        </div>
-    </div>
 </div>
 ';
