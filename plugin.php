@@ -6,10 +6,10 @@
 // PLUGIN INFORMATION - This should match what is in plugin.json
 $GLOBALS['plugins']['Media Manager'] = [
     'name' => 'Media Manager',
-    'author' => 'tinytechlabuk',
+    'author' => 'TehMuffinMoo|TinyTechLabUK',
     'category' => 'Media Management',
-    'link' => 'https://github.com/tinytechlabuk/php-ef-media-manager',
-    'version' => '1.1.1',
+    'link' => 'https://github.com/php-ef/plugin-media-manager',
+    'version' => '1.1.2',
     'image' => 'logo.png',
     'settings' => true,
     'api' => '/api/plugin/mediamanager/settings',
