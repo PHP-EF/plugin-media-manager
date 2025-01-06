@@ -104,7 +104,6 @@ trait PlexAuth {
     public function getPlexServers($data = []) {
         $plexToken = $this->pluginConfig['plexToken'] ?? null;
 		if (!$plexToken) {
-			$this->api->setAPIResponse('Error', 'Plex Token cannot be empty', 422);
 			return false;
 		}
 		$ownedOnly = isset($data['owned']) ?? false;
