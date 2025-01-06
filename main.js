@@ -103,7 +103,7 @@ $("#moviesTable").bootstrapTable();
 
 // ** PLEX AUTH ** //
 var plex_oauth_window = null;
-const plex_oauth_loader = '<style>' +
+var plex_oauth_loader = '<style>' +
     '.login-loader-container {' +
     'font-family: "Open Sans", Arial, sans-serif;' +
     'position: absolute;' +
@@ -248,7 +248,7 @@ function oAuthSuccess(type,token, id = null){
 		        $(id).change();
                 toast('PlexAuth','','Successfully grabbed Plex Authentication Token','success',30000)
 	        } else {
-                queryAPI('POST','/api/plugin/plexauth/oauth',{"token": token}).done(function(data) {
+                queryAPI('POST','/api/mediamanager/plex/oauth',{"token": token}).done(function(data) {
                     if (data['result'] == 'Success') {
                         window.location.replace(data['data']['location']);
                     } else if (data['result'] == 'Error') {
@@ -273,6 +273,31 @@ function oAuthStart(type){
             break;
     }
 }
+function refreshPlexServers(selector = null) {
+    queryAPI('GET', '/api/mediamanager/plex/servers?owned').done(function(response) {
+        const selectElement = document.querySelector(selector);
+        if (selectElement) {
+            // Clear existing options
+            selectElement.innerHTML = '<option selected="" value="">None</option>';
+
+            if (response.result == 'Success') {
+                // Add new options from the response data
+                response.data.forEach(server => {
+                    const option = document.createElement('option');
+                    option.value = server.machineIdentifier;
+                    option.textContent = server.name;
+                    selectElement.appendChild(option);
+                });
+                toast('Success','','Retrieved list of Plex Servers','success');
+            } else {
+                toast(response.result,'',response.message,'danger',30000);
+            }
+        }
+    }).fail(function(xhr) {
+        toast('Error', '', xhr, 'danger', 30000);
+    });
+}
+
 $('.plexOAuth').on('click', function() {
     oAuthStart('plex');
 });

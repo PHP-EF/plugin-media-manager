@@ -78,7 +78,7 @@ return '
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                <table data-url="/api/plugin/mediamanager/combined/tvshows"
+                <table data-url="/api/mediamanager/media/tvshows"
                     data-toggle="table"
                     data-search="true"
                     data-filter-control="true"

@@ -1,6 +1,6 @@
 <?php
 // Get a list of combined TV Shows
-$app->get('/plugin/mediamanager/combined/tvshows', function($request, $response, $args) {
+$app->get('/mediamanager/media/tvshows', function($request, $response, $args) {
     $MediaManager = new MediaManager();
     if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $params = $request->getQueryParams();
@@ -17,7 +17,7 @@ $app->get('/plugin/mediamanager/combined/tvshows', function($request, $response,
 });
 
 // Run a synchronisation for combined TV Shows
-$app->post('/plugin/mediamanager/combined/tvshows/update', function($request, $response, $args) {
+$app->post('/mediamanager/media/tvshows/update', function($request, $response, $args) {
     $MediaManager = new MediaManager();
     if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $Results = $MediaManager->updateTVShowTable();
@@ -44,7 +44,7 @@ $app->post('/plugin/mediamanager/combined/tvshows/update', function($request, $r
 // **
 
 // Get a list of combined Movies
-$app->get('/plugin/mediamanager/combined/movies', function($request, $response, $args) {
+$app->get('/mediamanager/media/movies', function($request, $response, $args) {
     $MediaManager = new MediaManager();
     if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $params = $request->getQueryParams();
@@ -61,7 +61,7 @@ $app->get('/plugin/mediamanager/combined/movies', function($request, $response, 
 });
 
 // Run a synchronisation for combined Movies
-$app->post('/plugin/mediamanager/combined/movies/update', function($request, $response, $args) {
+$app->post('/mediamanager/media/movies/update', function($request, $response, $args) {
     $MediaManager = new MediaManager();
     if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $Results = $MediaManager->updateMoviesTable();
