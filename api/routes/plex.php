@@ -31,3 +31,20 @@ $app->get('/mediamanager/plex/servers', function ($request, $response, $args) {
 		->withHeader('Content-Type', 'application/json;charset=UTF-8')
 		->withStatus($GLOBALS['responseCode']);
 });
+
+
+$app->post('/mediamanager/plex/tautulli/sso', function ($request, $response, $args) {
+	$MediaManager = new MediaManager();
+	$data = $MediaManager->api->getAPIRequestData($request);
+	$enabled = $MediaManager->config->get('Plugins','Media Manager')['tautulliSSOEnabled'] ?? true;
+	if ($enabled) {
+		$MediaManager->initiateTautulliSSO($data);
+	} else {
+		$MediaManager->api->setAPIResponse('Error','Tautulli SSO Disabled');
+	}
+
+	$response->getBody()->write(jsonE($GLOBALS['api']));
+	return $response
+		->withHeader('Content-Type', 'application/json;charset=UTF-8')
+		->withStatus($GLOBALS['responseCode']);
+});

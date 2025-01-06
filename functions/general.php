@@ -45,6 +45,7 @@ trait General {
         } else {
             $Result = $this->api->query->$Method($Url,$Data,$Headers,null,true);
         }
+        print_r($Result);
         if (isset($Result->status_code)) {
             if ($Result->status_code >= 400 && $Result->status_code < 600) {
                 switch($Result->status_code) {

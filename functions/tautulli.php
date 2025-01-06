@@ -124,4 +124,20 @@ trait Tautulli {
             return $Results;
         }  
     }
+
+    public function initiateTautulliSSO($data) {
+        $Url = $this->pluginConfig['tautulliUrl']."/auth/signin";
+        $Results = $this->getAPIResults('POST',$Url,$data);
+        if (isset($Results['response'])) {
+            if (isset($Results['response']['data'])) {
+                return $Results['response']['data'];
+            } else {
+                $this->api->setAPIResponse($Results['response']['result'],$Results['response']['message']);
+                return false;
+            }
+        } else {
+            $this->api->setAPIResponse('Error','Tautulli SSO did not return any data');
+            return false;
+        }
+    }
 }

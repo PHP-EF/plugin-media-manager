@@ -29,6 +29,7 @@ trait PlexAuth {
             'Content-Type' => 'application/json',
             'Accept' => 'application/json'
         );
+        print_r($Headers);
         return $this->getAPIResults($Method,$Url,$Data,$Headers);
     }
 

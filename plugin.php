@@ -140,7 +140,8 @@ class MediaManager extends ib {
             ),
             'Tautulli' => array(
                 $this->settingsOption('url', 'tautulliUrl', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port']),
-                $this->settingsOption('password', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key'])
+                $this->settingsOption('password', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('checkbox', 'tautulliEnableSSO', ['label' => 'Enable Tautulli SSO'])
             ),
             'Sonarr' => array(
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
