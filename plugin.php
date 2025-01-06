@@ -15,6 +15,11 @@ $GLOBALS['plugins']['Media Manager'] = [
     'api' => '/api/plugin/mediamanager/settings',
 ];
 
+// Set Additional Content Security Policy Headers
+$GLOBALS['Headers']['CSP']['Connect-Source'] = [
+    'https://plex.tv'
+];
+
 // Include MediaManager Functions
 foreach (glob(__DIR__.'/functions/*.php') as $function) {
     require_once $function; // Include each PHP file
