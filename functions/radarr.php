@@ -3,16 +3,24 @@ trait Radarr {
     // Radarr API Wrapper
     public function queryRadarrAPI($Method, $Uri, $Data = "", $Params = []) {
         if (!isset($this->pluginConfig['radarrUrl']) || empty($this->pluginConfig['radarrUrl'])) {
-            $this->logging->writeLog("MediaManager","Radarr URL Missing","error");
             $this->api->setAPIResponse('Error','Radarr URL Missing');
+            $this->logging->writeLog("MediaManager","Radarr URL Missing","error");
             return false;
         }
         if (!isset($this->pluginConfig['radarrApiKey']) || empty($this->pluginConfig['radarrApiKey'])) {
-            $this->logging->writeLog("MediaManager","Radarr API Key Missing","error");
             $this->api->setAPIResponse('Error','Radarr API Key Missing');
+            $this->logging->writeLog('MediaManager','Radarr API Key Missing','error');
             return false;
+        } else {
+            try {
+                $RadarrApiKey = decrypt($this->pluginConfig['radarrApiKey'],$this->config->get('Security','salt'));
+            } catch (Exception $e) {
+                $this->api->setAPIResponse('Error','Unable to decrypt Radarr API Key');
+                $this->logging->writeLog('MediaManager','Unable to decrypt Radarr API Key','error');
+                return false;
+            }
         }
-        $Params['apikey'] = $this->pluginConfig['radarrApiKey'];
+        $Params['apikey'] = $RadarrApiKey;
         if (!empty($Params)) {
             $BuiltQuery = $this->buildArrAPIQuery($Params);
             $Url = $this->pluginConfig['radarrUrl']."/api/".$this->pluginConfig['radarrApiVersion']."/".$Uri;

@@ -77,6 +77,11 @@ class MediaManager extends ib {
                 "value" => $item['machineIdentifier']
             ];
         }, $PlexServers));
+        try {
+            $PlexToken = decrypt($this->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken']);
+        } catch (Exception $e) {
+            $PlexToken = $e;
+        }
 
         return array(
             'About' => array (
@@ -99,7 +104,7 @@ class MediaManager extends ib {
 				<p>Tautulli JSON Headers - API Key for Sonarr Throttling Plugin</p>
 				<pre>
 {
-	"authorization": "' . $this->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken'] . '"
+	"authorization": "' . $PlexToken . '"
 }				</pre>
 				<br/>
 				<h3>Overseerr Webhook</h3>
@@ -127,7 +132,7 @@ class MediaManager extends ib {
     "{{extra}}": []
 }				</pre>
 				<p>Overseerr Authorization Header - API Key for Sonarr Throttling Plugin</p>
-				<pre><code>' . $this->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken'] . '</code></pre>
+				<pre><code>' . $PlexToken . '</code></pre>
 				<br/>']),
 			),
             'Plugin' => array(
@@ -135,11 +140,11 @@ class MediaManager extends ib {
             ),
             'Tautulli' => array(
                 $this->settingsOption('url', 'tautulliUrl', ['label' => 'Tautulli API URL', 'placeholder' => 'http://server:port']),
-                $this->settingsOption('password-alt', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key'])
+                $this->settingsOption('password', 'tautulliApiKey', ['label' => 'Tautulli API Key', 'placeholder' => 'Your API Key'])
             ),
             'Sonarr' => array(
                 $this->settingsOption('url', 'sonarrUrl', ['label' => 'Sonarr API URL', 'placeholder' => 'http://server:port']),
-                $this->settingsOption('password-alt', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('password', 'sonarrApiKey', ['label' => 'Sonarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'sonarrApiVersion', ['label' => 'Sonarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
                 $this->settingsOption('hr'),
                 $this->settingsOption('title', 'sonarrThrottlingTitle', ['text' => 'Sonarr Throttling']),
@@ -147,7 +152,7 @@ class MediaManager extends ib {
                 $this->settingsOption('input', 'sonarrThrottlingEpisodeThreshold', ['label' => 'Episode Threshold', 'placeholder' => '40']),
                 $this->settingsOption('input', 'sonarrThrottlingEpisodeScanQty', ['label' => 'Amount of episodes to perform initial scan for', 'placeholder' => '10']),
                 $this->settingsOption('select', 'sonarrThrottlingTag', ['label' => 'Tag to use for Throttled TV Shows', 'options' => $SonarrTagOptions]),
-                $this->settingsOption('password-alt', 'sonarrThrottlingAuthToken', ['label' => 'Auth Token for Webhooks']),
+                $this->settingsOption('password', 'sonarrThrottlingAuthToken', ['label' => 'Auth Token for Webhooks']),
                 $this->settingsOption('hr'),
                 $this->settingsOption('title', 'sonarrCleanupTitle', ['text' => 'Sonarr Cleanup']),
                 $this->settingsOption('select', 'sonarrCleanupExclusionTag', ['label' => 'Tag to exclude TV Shows from Cleanup', 'options' => $SonarrTagOptions]),
@@ -160,7 +165,7 @@ class MediaManager extends ib {
             ),
             'Radarr' => array(
                 $this->settingsOption('url', 'radarrUrl', ['label' => 'Radarr API URL', 'placeholder' => 'http://server:port']),
-                $this->settingsOption('password-alt', 'radarrApiKey', ['label' => 'Radarr API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('password', 'radarrApiKey', ['label' => 'Radarr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('select', 'radarrApiVersion', ['label' => 'Radarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
                 $this->settingsOption('hr'),
                 $this->settingsOption('title', 'radarrCleanupTitle', ['text' => 'Radarr Cleanup']),
@@ -190,14 +195,14 @@ class MediaManager extends ib {
 					};
 				}
 				"]),
-				$this->settingsOption('password-alt', 'plexToken', ['label' => 'Plex Authentication Token']),
+				$this->settingsOption('password', 'plexToken', ['label' => 'Plex Authentication Token']),
 				$this->settingsOption('button', 'getPlexToken', ['label' => 'Get Plex Token', 'text' => 'Retrieve', 'attr' => 'onclick="PlexOAuth(oAuthSuccess,oAuthError, null, \'.modal-body [name=plexToken]\');"']),
 				$this->settingsOption('select', 'plexID', ['label' => 'Plex Machine ID', 'options' => $PlexServerOptions]),
 				$this->settingsOption('button', 'refreshPlexServers', ['label' => 'Refresh Plex Servers', 'text' => 'Refresh', 'attr' => 'onclick=\'refreshPlexServers(`select[name="plexID"]`);\'']),
 				$this->settingsOption('input', 'plexAdmin', ['label' => 'Plex Admin Username']),
 				$this->settingsOption('checkbox', 'plexAuthEnabled', ['label' => 'Enable Plex Authentication']),
 				$this->settingsOption('checkbox', 'plexAuthAutoCreate', ['label' => 'Auto-Create Plex Users']),
-				$this->settingsOption('checkbox', 'plexStrictFriends', ['label' => 'Only allow Plex Friends to login'])
+				$this->settingsOption('checkbox', 'plexStrictFriends', ['label' => 'Only allow Plex Friends with Shares to login'])
 			),
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),

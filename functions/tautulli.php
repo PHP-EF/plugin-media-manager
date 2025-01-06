@@ -7,13 +7,20 @@ trait Tautulli {
             return false;
         }
 
-        if (!isset($this->pluginConfig['tautulliApiKey'])) {
+        if (!isset($this->pluginConfig['tautulliApiKey']) || empty($this->pluginConfig['tautulliApiKey'])) {
             $this->api->setAPIResponse('Error','Tautulli API Key Missing');
             return false;
+        } else {
+            try {
+                $TautulliAPIKey = decrypt($this->pluginConfig['tautulliApiKey'],$this->config->get('Security','salt'));
+            } catch (Exception $e) {
+                $this->logging->writeLog('MediaManager','Unable to decrypt Tautulli API Key','error');
+                return false;
+            }
         }
 
         $Url = $this->pluginConfig['tautulliUrl']."/api/v2?cmd=".$Cmd;
-        $Url = $Url.'&apikey='.$this->pluginConfig['tautulliApiKey'];
+        $Url = $Url.'&apikey='.$TautulliAPIKey;
         $Results = $this->getAPIResults($Method,$Url,$Data);
         if (isset($Results['response'])) {
             if (isset($Results['response']['data'])) {

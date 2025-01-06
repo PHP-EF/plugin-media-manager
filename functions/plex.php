@@ -7,10 +7,37 @@ trait PlexAuth {
 		$this->pluginConfig = $this->config->get('Plugins','Media Manager') ?? [];
 	}
 
+    public function queryPlexAPI($Method, $Url, $Data = "") {
+        if (!isset($this->pluginConfig['plexToken']) || empty($this->pluginConfig['plexToken'])) {
+            $this->api->setAPIResponse('Error','Plex Auth Token Missing');
+            $this->logging->writeLog("MediaManager","Plex Auth Token Missing","error");
+            return false;
+        } else {
+            try {
+                $PlexToken = decrypt($this->pluginConfig['plexToken'],$this->config->get('Security','salt'));
+            } catch (Exception $e) {
+                $this->api->setAPIResponse('Error','Unable to decrypt Plex Auth Token');
+                $this->logging->writeLog('MediaManager','Unable to decrypt Plex Auth Token','error');
+                return false;
+            }
+        }
+		$Headers = array(
+			'X-Plex-Token' => $PlexToken,
+			'X-Plex-Product' => 'PHP-EF',
+			'X-Plex-Version' => '2.0',
+			'X-Plex-Client-Identifier' => $this->config->get('System','uuid'),
+			'Content-Type' => 'application/json',
+			'Accept' => 'application/json'
+		);
+        return $this->getAPIResults($Method,$Url,$Data,$Headers);
+    }
+
+	// Plex SSO via OAuth
 	public function oauth($data) {
 		return $this->checkPlexToken($data['token']);
 	}
 
+	// Checks Plex Auth Token as part of OAuth Process
 	public function checkPlexToken($token = '') {
 		$plexAuthEnabled = $this->pluginConfig['plexAuthEnabled'] ?? false;
 		$plexAuthAutoCreate = $this->pluginConfig['plexAuthAutoCreate'] ?? false;
@@ -53,42 +80,37 @@ trait PlexAuth {
 		return false;
 	}
 
+	// Check Plex Username against friends list
 	private function checkPlexUser($username) {
 		$plexStrictFriends = $this->pluginConfig['plexStrictFriends'] ?? true;
 		$plexID = $this->pluginConfig['plexID'] ?? null;
-		$plexToken = $this->pluginConfig['plexToken'] ?? null;
+		
 		try {
-			if (!empty($plexToken)) {
-				$Url = 'https://plex.tv/api/users';
-				$Headers = array(
-					'X-Plex-Token' => $plexToken,
-				);
-				$response = $this->api->query->get($Url, $Headers);
+			$response = $this->queryPlexAPI('GET','https://plex.tv/api/users');
 
-				if ($response) {
-					libxml_use_internal_errors(true);
-					$userXML = simplexml_load_string($response->body);
-					if (is_array($userXML) || is_object($userXML)) {
-						$usernameLower = strtolower($username);
-						foreach ($userXML as $child) {
-							if (isset($child['username']) && strtolower($child['username']) == $usernameLower || isset($child['email']) && strtolower($child['email']) == $usernameLower) {
-								$this->logging->writeLog('Plex','Found User on Friends List','debug');
-								$machineMatches = false;
-								if ($plexStrictFriends) {
-									foreach ($child->Server as $server) {
-										if ((string)$server['machineIdentifier'] == $plexID) {
-											$machineMatches = true;
-										}
+			if ($response) {
+				libxml_use_internal_errors(true);
+				$userXML = simplexml_load_string($response->body);
+				if (is_array($userXML) || is_object($userXML)) {
+					$usernameLower = strtolower($username);
+					foreach ($userXML as $child) {
+						if (isset($child['username']) && strtolower($child['username']) == $usernameLower || isset($child['email']) && strtolower($child['email']) == $usernameLower) {
+							$this->logging->writeLog('Plex','Found User on Friends List','debug');
+							$machineMatches = false;
+							if ($plexStrictFriends) {
+								foreach ($child->Server as $server) {
+									if ((string)$server['machineIdentifier'] == $plexID) {
+										$machineMatches = true;
 									}
-								} else {
-									$machineMatches = true;
 								}
-								if ($machineMatches) {
-									$this->logging->writeLog('Plex','User Approved for Login','debug');
-									return true;
-								} else {
-									$this->logging->writeLog('Plex','User Not Approved for Login','debug');
-								}
+							} else {
+								$machineMatches = true;
+							}
+							if ($machineMatches) {
+								$this->logging->writeLog('Plex','User Approved for Login','debug');
+								return true;
+							} else {
+								$this->logging->writeLog('Plex','User Not Approved for Login','debug');
 							}
 						}
 					}
@@ -102,19 +124,9 @@ trait PlexAuth {
 	}
 
     public function getPlexServers($data = []) {
-        $plexToken = $this->pluginConfig['plexToken'] ?? null;
-		if (!$plexToken) {
-			return false;
-		}
 		$ownedOnly = isset($data['owned']) ?? false;
-		$headers = [
-			'X-Plex-Product' => 'PHP-EF',
-			'X-Plex-Version' => '2.0',
-			'X-Plex-Client-Identifier' => $this->config->get('System','uuid'),
-			'X-Plex-Token' => $this->pluginConfig['plexToken'],
-		];
 		try {
-            $response = $this->api->query->get('https://plex.tv/pms/servers',$headers);
+            $response = $this->queryPlexAPI('GET','https://plex.tv/pms/servers');
 			libxml_use_internal_errors(true);
 			if ($response->success) {
 				$items = array();

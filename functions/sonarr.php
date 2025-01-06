@@ -4,13 +4,23 @@ trait Sonarr {
     public function querySonarrAPI($Method, $Uri, $Data = "", $Params = []) {
         if (!isset($this->pluginConfig['sonarrUrl']) || empty($this->pluginConfig['sonarrUrl'])) {
             $this->api->setAPIResponse('Error','Sonarr URL Missing');
+            $this->logging->writeLog("MediaManager","Sonarr URL Missing","error");
             return false;
         }
         if (!isset($this->pluginConfig['sonarrApiKey']) || empty($this->pluginConfig['sonarrApiKey'])) {
             $this->api->setAPIResponse('Error','Sonarr API Key Missing');
+            $this->logging->writeLog('MediaManager','Sonarr API Key Missing','error');
             return false;
+        } else {
+            try {
+                $SonarrAPIKey = decrypt($this->pluginConfig['sonarrApiKey'],$this->config->get('Security','salt'));
+            } catch (Exception $e) {
+                $this->api->setAPIResponse('Error','Unable to decrypt Sonarr API Key');
+                $this->logging->writeLog('MediaManager','Unable to decrypt Sonarr API Key','error');
+                return false;
+            }
         }
-        $Params['apikey'] = $this->pluginConfig['sonarrApiKey'];
+        $Params['apikey'] = $SonarrAPIKey;
         if (!empty($Params)) {
             $BuiltQuery = $this->buildArrAPIQuery($Params);
             $Url = $this->pluginConfig['sonarrUrl']."/api/".$this->pluginConfig['sonarrApiVersion']."/".$Uri;

@@ -39,11 +39,11 @@ trait General {
     }
 
     // Generic Get API Results Function, to be shared across any API Wrappers
-    private function getAPIResults($Method, $Url, $Data) {
+    private function getAPIResults($Method, $Url, $Data, $Headers = []) {
         if (in_array($Method,["GET","get"])) {
-            $Result = $this->api->query->$Method($Url,null,null,true);
+            $Result = $this->api->query->$Method($Url,$Headers,null,true);
         } else {
-            $Result = $this->api->query->$Method($Url,$Data,null,null,true);
+            $Result = $this->api->query->$Method($Url,$Data,$Headers,null,true);
         }
         if (isset($Result->status_code)) {
             if ($Result->status_code >= 400 && $Result->status_code < 600) {
