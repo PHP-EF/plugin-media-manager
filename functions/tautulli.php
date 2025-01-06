@@ -127,7 +127,7 @@ trait Tautulli {
 
     public function initiateTautulliSSO($data) {
         $Url = $this->pluginConfig['tautulliUrl']."/auth/signin";
-        $Results = $this->api->query->post($Url,$data,array('Content-Type' => 'x-www-form-urlencoded'));
+        $Results = $this->api->query->post($Url,$data,array('Content-Type' => 'x-www-form-urlencoded'),null,true);
         if (isset($Results)) {
             return $Results;
         } else {
