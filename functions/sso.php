@@ -2,7 +2,7 @@
 trait SSO {
     private function getSSOEnabled() {
         $TautulliSSOEnabled = $this->pluginConfig['tautulliEnableSSO'] ?? false;
-        $OverseerrSSOEnabled = $this->pluginConfig['overseerrSSOEnabled'] ?? false;
+        $OverseerrSSOEnabled = $this->pluginConfig['overseerrEnableSSO'] ?? false;
 
         return array(
             'Tautulli' => $TautulliSSOEnabled,
