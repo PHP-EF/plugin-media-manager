@@ -124,25 +124,4 @@ trait Tautulli {
             return $Results;
         }  
     }
-
-    public function initiateTautulliSSO($data) {
-        $Enabled = $this->pluginConfig['tautulliEnableSSO'] ?? false;
-        if ($Enabled) {
-            $Url = $this->pluginConfig['tautulliUrl']."/auth/signin";
-            $HeadersArr = array(
-                'Content-Type' => 'application/x-www-form-urlencoded'
-            );
-            $Results = $this->api->query->post($Url,$data,$HeadersArr);
-            if (isset($Results) && isset($Results['status']) && $Results['status'] == 'success') {
-                if (isset($Results['token']) && isset($Results['uuid'])) {
-                    setcookie('tautulli_token_'.$Results['uuid'], $Results['token'], time() + (86400 * 30), "/"); // 30 days
-                }
-                return $Results;
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
-    }
 }

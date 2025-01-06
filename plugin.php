@@ -31,7 +31,8 @@ class MediaManager extends ib {
     PlexAuth,
     Tautulli,
     Sonarr,
-    Radarr;
+    Radarr,
+    SSO;
 
     private $pluginConfig;
     private $sql;
@@ -205,6 +206,11 @@ class MediaManager extends ib {
 				$this->settingsOption('checkbox', 'plexAuthAutoCreate', ['label' => 'Auto-Create Plex Users']),
 				$this->settingsOption('checkbox', 'plexStrictFriends', ['label' => 'Only allow Plex Friends with Shares to login'])
 			),
+            'Overseerr' => array(
+                $this->settingsOption('url', 'overseerrUrl', ['label' => 'Overseerr API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('password', 'overseerrApiKey', ['label' => 'Overseerr API Key', 'placeholder' => 'Your API Key']),
+                $this->settingsOption('checkbox', 'overseerrEnableSSO', ['label' => 'Enable Overseerr SSO'])
+            ),
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
                 $this->settingsOption('cron', 'sonarrAndTautulliSyncronisationSchedule', ['label' => 'Synchronisation Schedule', 'placeholder' => '*/60 * * * *']),
