@@ -36,7 +36,7 @@ trait PlexAuth {
     public function oauth($data) {
         if ($this->checkPlexToken($data['token'])) {
             //Initiate Tautulli SSO if Enabled
-            $this->initiateTautulliSSO($data);
+            $this->initiateSSO($data);
             return true;
         };
         return false;

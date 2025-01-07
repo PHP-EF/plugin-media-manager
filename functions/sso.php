@@ -43,6 +43,7 @@ trait SSO {
         $Url = $this->pluginConfig['overseerrUrl']."/api/v1/auth/plex";
         $Results = $this->api->query->post($Url,$data,null,null,true);
         if (isset($Results->success)) {
+            print_r($Results);
             setcookie('connect.sid', $response->cookies['connect.sid']->value, time() + (86400 * 30), "/"); // 30 days
             return true;
         } else {
