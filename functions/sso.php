@@ -15,11 +15,11 @@ trait SSO {
         $Enabled = $this->getSSOEnabled();
 
         if ($Enabled['Tautulli']) {
-            initiateTautulliSSO($data);
+            $this->initiateTautulliSSO($data);
         }
 
         if ($Enabled['Overseerr']) {
-            initiateOverseerrSSO($data);
+            $this->initiateOverseerrSSO($data);
         }
     }
 
