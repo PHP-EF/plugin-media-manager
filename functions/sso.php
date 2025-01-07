@@ -12,7 +12,7 @@ trait SSO {
     }
 
     public function initiateSSO($data) {
-        $Enabled = getSSOEnabled();
+        $Enabled = $this->getSSOEnabled();
 
         if ($Enabled['Tautulli']) {
             initiateTautulliSSO($data);
