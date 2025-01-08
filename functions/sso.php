@@ -28,6 +28,7 @@ trait SSO {
         $HeadersArr = array(
             'Content-Type' => 'application/x-www-form-urlencoded'
         );
+        $data['remember_me'] = 1; // swap out to using remember me from PHP-EF when implemented
         $Results = $this->api->query->post($Url,$data,$HeadersArr);
         if (isset($Results) && isset($Results['status']) && $Results['status'] == 'success') {
             if (isset($Results['token']) && isset($Results['uuid'])) {
