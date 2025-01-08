@@ -31,9 +31,9 @@ trait SSO {
         $Results = $this->api->query->post($Url,$data,$HeadersArr);
         if (isset($Results) && isset($Results['status']) && $Results['status'] == 'success') {
             if (isset($Results['token']) && isset($Results['uuid'])) {
-                setcookie('tautulli_token_'.$Results['uuid'], $Results['token'], time() + (86400 * 30), "/", ".tmmn.local"); // 30 days
+                $this->cookie('set','tautulli_token_'.$Results['uuid'], $Results['token'], 30);
             }
-            return $Results;
+            return true;
         } else {
             return false;
         }
@@ -46,7 +46,7 @@ trait SSO {
         );
         $Results = $this->api->query->post($Url,$DataArr,null,null,true);
         if (isset($Results->success)) {
-            setcookie('connect.sid', urldecode($Results->cookies['connect.sid']->value), time() + (86400 * 30), "/", ".tmmn.local"); // 30 days
+            $this->cookie('set','connect.sid', urldecode($Results->cookies['connect.sid']->value), 30);
             return true;
         } else {
             return false;

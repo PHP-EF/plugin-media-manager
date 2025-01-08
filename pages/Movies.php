@@ -2,7 +2,7 @@
 $MediaManager = new MediaManager();
 $pluginConfig = $MediaManager->config->get('Plugins','Media Manager');
 if ($MediaManager->auth->checkAccess($pluginConfig['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER") == false) {
-    $ib->api->setAPIResponse('Error','Unauthorized',401);
+    $phpef->api->setAPIResponse('Error','Unauthorized',401);
     return false;
 }
 return '

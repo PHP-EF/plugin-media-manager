@@ -1,7 +1,7 @@
 <?php
 // Set Schedules From Configuration
-$SonarrAndTautulliSyncronisationSchedule = $ib->config->get('Plugins','Media Manager')['sonarrAndTautulliSyncronisationSchedule'] ?? '*/60 * * * *';
-$RadarrAndTautulliSyncronisationSchedule = $ib->config->get('Plugins','Media Manager')['radarrAndTautulliSyncronisationSchedule'] ?? '*/60 * * * *';
+$SonarrAndTautulliSyncronisationSchedule = $phpef->config->get('Plugins','Media Manager')['sonarrAndTautulliSyncronisationSchedule'] ?? '*/60 * * * *';
+$RadarrAndTautulliSyncronisationSchedule = $phpef->config->get('Plugins','Media Manager')['radarrAndTautulliSyncronisationSchedule'] ?? '*/60 * * * *';
 
 // Scheduled Syncronisation of Sonarr / Tautulli into tvshows Table
 $scheduler->call(function() {

@@ -25,7 +25,7 @@ foreach (glob(__DIR__.'/functions/*.php') as $function) {
     require_once $function; // Include each PHP file
 }
 
-class MediaManager extends ib {
+class MediaManager extends phpef {
     use General,
     Database,
     PlexAuth,

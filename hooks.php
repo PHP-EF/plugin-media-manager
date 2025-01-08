@@ -1,9 +1,9 @@
 <?php
 // Add hook to include custom JS to login page
 $this->addHook('login_page_js', function() {
-    global $ib;
+    global $phpef;
     // Check if plugin is enabled
-    $enabled = $ib->config->get('Plugins','Media Manager')['plexAuthEnabled'] ?? false;
+    $enabled = $phpef->config->get('Plugins','Media Manager')['plexAuthEnabled'] ?? false;
 
     if ($enabled) {
         echo "
@@ -12,7 +12,7 @@ $this->addHook('login_page_js', function() {
                 'Accept': 'application/json',
                 'X-Plex-Product': 'PHP-EF',
                 'X-Plex-Version': '2.0',
-                'X-Plex-Client-Identifier': '".$ib->config->get('System','uuid')."',
+                'X-Plex-Client-Identifier': '".$phpef->config->get('System','uuid')."',
                 'X-Plex-Model': 'Plex OAuth',
                 // 'X-Plex-Platform': osName,
                 // 'X-Plex-Platform-Version': osVersion,
@@ -28,8 +28,8 @@ $this->addHook('login_page_js', function() {
 });
 
 $this->addHook('login_page_buttons', function() {
-    global $ib;
-    $enabled = $ib->config->get('Plugins','Media Manager')['plexAuthEnabled'] ?? false;
+    global $phpef;
+    $enabled = $phpef->config->get('Plugins','Media Manager')['plexAuthEnabled'] ?? false;
 
     if ($enabled) {
         echo '<button id="plexOAuth" class="plexOAuth" style="background: #e5a00d; border: none; color: #FFF; font-size: 18px;"> Login With Plex </button>';
