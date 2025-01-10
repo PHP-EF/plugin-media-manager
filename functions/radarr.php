@@ -32,12 +32,20 @@ trait Radarr {
     // Function to query list of movies from Radarr
     public function getRadarrMovies() {
         $Result = $this->queryRadarrAPI('GET','movie');
-        return $Result;
+        if (is_array($Result)) {
+            return $Result;
+        } else {
+            return false;
+        }
     }
 
     public function getRadarrTags() {
         $Result = $this->queryRadarrAPI('GET','tag');
-        return $Result;
+        if (is_array($Result)) {
+            return $Result;
+        } else {
+            return false;
+        }
     }
 
     // **

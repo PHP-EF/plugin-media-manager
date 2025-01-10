@@ -33,13 +33,21 @@ trait Sonarr {
     // Function to query list of TV Shows from Sonarr
     public function getSonarrTVShows($Params = []) {
         $Result = $this->querySonarrAPI('GET','series',null,$Params);
-        return $Result;
+        if (is_array($Result)) {
+            return $Result;
+        } else {
+            return false;
+        }
     }
 
     // Function to query list of TV Shows from Sonarr by Series ID
     public function getSonarrTVShowById($id) {
         $Result = $this->querySonarrAPI('GET','series/'.$id);
-        return $Result;
+        if (is_array($Result)) {
+            return $Result;
+        } else {
+            return false;
+        }
     }
 
     // Function to update a TV Show in Sonarr. Requires sonarr object to be submitted as a parameter.
