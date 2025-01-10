@@ -92,7 +92,7 @@ class MediaManager extends phpef {
 				<br/>
 				<h3>Tautulli Webhook</h3>
 				<p>Configure this Webhook in Tautulli. Using the <code>Playback Start</code> or <code>Watched</code> triggers will provide the best experience.</p>
-				<pre><code class="elip hidden-xs pb-1">/api/mediamanager/webhooks/sonarrthrottling/tautulli</code></pre>
+				<pre><code class="elip hidden-xs pb-1">/api/mediamanager/webhook/sonarrthrottling/tautulli</code></pre>
 				<p>Tautulli JSON Data - This can be customised as long as <b>tvdbId</b> and <b>media_type</b> are present.</p>
 				<pre>
 {
@@ -110,7 +110,7 @@ class MediaManager extends phpef {
 				<br/>
 				<h3>Overseerr Webhook</h3>
 				<p>Configure this Webhook in Overseerr</p>
-				<pre><code class="elip hidden-xs">/api/mediamanager/webhooks/sonarrthrottling/overseerr</code></pre>
+				<pre><code class="elip hidden-xs">/api/mediamanager/webhook/sonarrthrottling/overseerr</code></pre>
 				<br/>
 				<p>Overseerr JSON Payload (Default Webhook) - This can be customised as long as <b>media->tvdbId</b> and <b>media->media_type</b> are present</p>
 				<pre>
