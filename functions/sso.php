@@ -23,6 +23,7 @@ trait SSO {
         }
     }
 
+    // check if array
     private function initiateTautulliSSO($data) {
         $Url = $this->pluginConfig['tautulliUrl']."/auth/signin";
         $HeadersArr = array(
