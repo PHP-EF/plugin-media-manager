@@ -6,7 +6,8 @@
 // PLUGIN INFORMATION - This should match what is in plugin.json
 $GLOBALS['plugins']['Media Manager'] = [
     'name' => 'Media Manager',
-    'author' => 'TehMuffinMoo|TinyTechLabUK',
+    'author' => 'TehMuffinMoo',
+    'contributors' => 'TinyTechLabUK',
     'category' => 'Media Management',
     'link' => 'https://github.com/php-ef/plugin-media-manager',
     'version' => '1.1.3',
@@ -65,7 +66,6 @@ class MediaManager extends phpef {
                 "value" => $item['id']
             ];
         }, $SonarrTags));
-
         $RadarrTagOptions = array_merge($AppendNone,array_map(function($item) {
             return [
                 "name" => $item['label'],
@@ -202,9 +202,10 @@ class MediaManager extends phpef {
 				$this->settingsOption('select', 'plexID', ['label' => 'Plex Machine ID', 'options' => $PlexServerOptions]),
 				$this->settingsOption('button', 'refreshPlexServers', ['label' => 'Refresh Plex Servers', 'text' => 'Refresh', 'attr' => 'onclick=\'refreshPlexServers(`select[name="plexID"]`);\'']),
 				$this->settingsOption('input', 'plexAdmin', ['label' => 'Plex Admin Username']),
+                $this->settingsOption('authgroup', 'plexDefaultGroup', ['label' => 'The default group to give new plex users']),
 				$this->settingsOption('checkbox', 'plexAuthEnabled', ['label' => 'Enable Plex Authentication']),
 				$this->settingsOption('checkbox', 'plexAuthAutoCreate', ['label' => 'Auto-Create Plex Users']),
-				$this->settingsOption('checkbox', 'plexStrictFriends', ['label' => 'Only allow Plex Friends with Shares to login'])
+				$this->settingsOption('checkbox', 'plexStrictFriends', ['label' => 'Only allow Plex Friends with Shares to login'])                
 			),
             'Overseerr' => array(
                 $this->settingsOption('url', 'overseerrUrl', ['label' => 'Overseerr API URL', 'placeholder' => 'http://server:port']),

@@ -47,6 +47,7 @@ trait PlexAuth {
         $plexAuthEnabled = $this->pluginConfig['plexAuthEnabled'] ?? false;
         $plexAuthAutoCreate = $this->pluginConfig['plexAuthAutoCreate'] ?? false;
         $plexAdmin = $this->pluginConfig['plexAdmin'] ?? null;
+        $plexDefaultGroup = $this->pluginConfig['plexDefaultGroup'] ?? '';
         if ($plexAuthEnabled) {
             try {
                 if (($token !== '')) {
@@ -62,7 +63,7 @@ trait PlexAuth {
                             'FirstName' => $tokenResult['user']['username'],
                             'LastName' => '',
                             'Email' => $tokenResult['user']['email'],
-                            'Groups' => ''
+                            'Groups' => $plexDefaultGroup
                         );
                         if (strtolower($plexAdmin) == strtolower($tokenUser['Username']) || $this->checkPlexUser($tokenUser['Username'])) {
                             if ($this->auth->createUserIfNotExists($tokenUser,'Plex',$plexAuthAutoCreate,false)) {
