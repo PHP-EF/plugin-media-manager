@@ -3,7 +3,7 @@
 $app->post('/mediamanager/webhook/sonarrthrottling/tautulli', function($request, $response, $args) {
     $MediaManager = new MediaManager();
     $Headers = getallheaders();
-    if ((isset($Headers['Authorization']) && $Headers['Authorization'] == $MediaManager->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken']) || $MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+    if ((isset($Headers['Authorization']) && $Headers['Authorization'] == $MediaManager->sonarrThrottlingDecryptAuthorizationKey()) || $MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $data = $MediaManager->api->getAPIRequestData($request);
         $MediaManager->sonarrThrottlingTautulliWebhook($data);
     }
@@ -17,7 +17,7 @@ $app->post('/mediamanager/webhook/sonarrthrottling/tautulli', function($request,
 $app->post('/mediamanager/webhook/sonarrthrottling/overseerr', function($request, $response, $args) {
     $MediaManager = new MediaManager();
     $Headers = getallheaders();
-    if ((isset($Headers['Authorization']) && $Headers['Authorization'] == $MediaManager->config->get('Plugins','Media Manager')['sonarrThrottlingAuthToken']) || $MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+    if ((isset($Headers['Authorization']) && $Headers['Authorization'] == $MediaManager->sonarrThrottlingDecryptAuthorizationKey()) || $MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $data = $MediaManager->api->getAPIRequestData($request);
         $MediaManager->sonarrThrottlingOverseerrWebhook($data);
     }

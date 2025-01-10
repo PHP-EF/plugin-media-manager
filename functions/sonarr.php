@@ -424,4 +424,15 @@ trait Sonarr {
             return false;
         }
     }
+
+    public function sonarrThrottlingDecryptAuthorizationKey() {
+        try {
+            $AuthKey = decrypt($this->pluginConfig['sonarrThrottlingAuthToken'],$this->config->get('Security','salt'));
+            return $AuthKey;
+        } catch (Exception $e) {
+            $this->api->setAPIResponse('Error','Unable to decrypt Auth Token');
+            $this->logging->writeLog('MediaManager','Unable to decrypt Sonarr Throttling Auth Token','error');
+            return false;
+        }
+    }
 }
