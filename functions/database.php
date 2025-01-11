@@ -144,36 +144,43 @@ trait Database {
                     // Update 'clean' to true for shows that meet cleanup criteria and if cleanup is enabled
                     $cleanupEnabled = $this->pluginConfig['sonarrCleanupEnabled'] ?? false;
                     if ($cleanupEnabled) {
-                        try {
-                            // Default to false
-                            $Show['clean'] = false;
-    
-                            // Check if it has been added longer than X days ago
-                            $DateAdded = new DateTime($Show['added']);
-                            $LastPlayedEpoch = false;
-                            if (isset($Show['Tautulli'])) {
-                                if (isset($Show['Tautulli']['last_played'])) {
-                                    $LastPlayedEpoch = $Show['Tautulli']['last_played'] ?? false;
+                        // Exclude shows with exclusion tag
+                        $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'] ?? null;
+                        $tags = explode(',', $show['tags']);
+                        if (!in_array($exclusionTag, $tags)) {
+                            try {
+                                // Default to false
+                                $Show['clean'] = false;
+        
+                                // Check if it has been added longer than X days ago
+                                $DateAdded = new DateTime($Show['added']);
+                                $LastPlayedEpoch = false;
+                                if (isset($Show['Tautulli'])) {
+                                    if (isset($Show['Tautulli']['last_played'])) {
+                                        $LastPlayedEpoch = $Show['Tautulli']['last_played'] ?? false;
+                                    }
                                 }
-                            }
-    
-                            if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['sonarrCleanupMaxAge'])) {
-                                if ($LastPlayedEpoch) {
-                                    // Check if it has been watched in longer than X days ago
-                                    $LastPlayed = new DateTime("@$LastPlayedEpoch");
-                                    if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+        
+                                if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+                                    if ($LastPlayedEpoch) {
+                                        // Check if it has been watched in longer than X days ago
+                                        $LastPlayed = new DateTime("@$LastPlayedEpoch");
+                                        if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+                                            $Show['clean'] = true;
+                                        }
+                                    } else {
                                         $Show['clean'] = true;
                                     }
-                                } else {
-                                    $Show['clean'] = true;
                                 }
+                            } catch (Exception $e) {
+                                $this->logging->writeLog("MediaManager","Failed to update cleanup status for TV Shows.","error",$e);
+                                return array(
+                                    'result' => 'Error',
+                                    'message' => $e
+                                );
                             }
-                        } catch (Exception $e) {
-                            $this->logging->writeLog("MediaManager","Failed to update cleanup status for TV Shows.","error",$e);
-                            return array(
-                                'result' => 'Error',
-                                'message' => $e
-                            );
+                        } else {
+                            $Show['clean'] = false;
                         }
                     } else {
                         $Show['clean'] = false;
@@ -289,6 +296,14 @@ trait Database {
         return $result;
     }
 
+    // Function to get TV Shows By Cleanup State
+    public function getTVShowsTableByCleanupState($state) {
+        $stmt = $this->sql->prepare("SELECT * FROM tvshows WHERE clean = :clean");
+        $stmt->execute(['clean' => $state]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
+    }
+
     // Function to update the Movies Table (Synchronisation)
     public function updateMoviesTable() {
         $Movies = $this->queryAndMatchRadarrAndTautulli();
@@ -317,36 +332,43 @@ trait Database {
                     // Update 'clean' to true for movies that meet cleanup criteria and if cleanup is enabled
                     $cleanupEnabled = $this->pluginConfig['radarrCleanupEnabled'] ?? false;
                     if ($cleanupEnabled) {
-                        try {
-                            // Default to false
-                            $Movie['clean'] = false;
+                        // Exclude shows with exclusion tag
+                        $exclusionTag = $this->pluginConfig['radarrCleanupExclusionTag'] ?? null;
+                        $tags = explode(',', $Movie['tags']);
+                        if (!in_array($exclusionTag, $tags)) {
+                            try {
+                                // Default to false
+                                $Movie['clean'] = false;
 
-                            // Check if it has been added longer than X days ago
-                            $DateAdded = new DateTime($Movie['added']);
-                            $LastPlayedEpoch = false;
-                            if (isset($Movie['Tautulli'])) {
-                                if (isset($Movie['Tautulli']['last_played'])) {
-                                    $LastPlayedEpoch = $Movie['Tautulli']['last_played'] ?? false;
+                                // Check if it has been added longer than X days ago
+                                $DateAdded = new DateTime($Movie['added']);
+                                $LastPlayedEpoch = false;
+                                if (isset($Movie['Tautulli'])) {
+                                    if (isset($Movie['Tautulli']['last_played'])) {
+                                        $LastPlayedEpoch = $Movie['Tautulli']['last_played'] ?? false;
+                                    }
                                 }
-                            }
 
-                            if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['radarrCleanupMaxAge'])) {
-                                if ($LastPlayedEpoch) {
-                                    // Check if it has been watched in longer than X days ago
-                                    $LastPlayed = new DateTime("@$LastPlayedEpoch");
-                                    if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                                if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                                    if ($LastPlayedEpoch) {
+                                        // Check if it has been watched in longer than X days ago
+                                        $LastPlayed = new DateTime("@$LastPlayedEpoch");
+                                        if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                                            $Movie['clean'] = true;
+                                        }
+                                    } else {
                                         $Movie['clean'] = true;
                                     }
-                                } else {
-                                    $Movie['clean'] = true;
                                 }
+                            } catch (Exception $e) {
+                                $this->logging->writeLog("MediaManager","Failed to update cleanup status for Movies.","error",$e);
+                                return array(
+                                    'result' => 'Error',
+                                    'message' => $e
+                                );
                             }
-                        } catch (Exception $e) {
-                            $this->logging->writeLog("MediaManager","Failed to update cleanup status for Movies.","error",$e);
-                            return array(
-                                'result' => 'Error',
-                                'message' => $e
-                            );
+                        } else {
+                            $Movie['clean'] = false;
                         }
                     } else {
                         $Movie['clean'] = false;

@@ -435,4 +435,26 @@ trait Sonarr {
             return false;
         }
     }
+
+    // **
+    // SONARR CLEANUP
+    // **
+
+    public function sonarrCleanup($ids = []) {
+        if (!empty($ids)) {
+            // .. run manual cleanup on one or more shows
+        } else {
+            // .. run either manually or automatically invoked cleanup on all shows marked for cleaning
+            $ShowsToClean = $this->getTVShowsTableByCleanupState(true);
+
+            // Remove TV Shows with excluded tag
+            $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'];
+            $ShowsToClean = array_filter($ShowsToClean, function($show) use ($exclusionTag) {
+                $tags = explode(',', $show['tags']);
+                return !in_array($exclusionTag, $tags);
+            });
+    
+            return $ShowsToClean;
+        }
+    }
 }
