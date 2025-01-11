@@ -157,6 +157,7 @@ class MediaManager extends phpef {
                 $this->settingsOption('password', 'sonarrThrottlingAuthToken', ['label' => 'Auth Token for Webhooks']),
                 $this->settingsOption('hr'),
                 $this->settingsOption('title', 'sonarrCleanupTitle', ['text' => 'Sonarr Cleanup']),
+                $this->settingsOption('checkbox', 'sonarrCleanupEnabled', ['label' => 'Enable Sonarr Cleanup']),
                 $this->settingsOption('select', 'sonarrCleanupExclusionTag', ['label' => 'Tag to exclude TV Shows from Cleanup', 'options' => $SonarrTagOptions]),
                 $this->settingsOption('input', 'sonarrCleanupEpisodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '10']),
                 $this->settingsOption('input', 'sonarrCleanupMaxAge', ['label' => 'Maximum days before TV Show is cleaned up', 'placeholder' => '180']),
@@ -171,6 +172,7 @@ class MediaManager extends phpef {
                 $this->settingsOption('select', 'radarrApiVersion', ['label' => 'Radarr API Version', 'options' => array(array("name" => 'v3', "value" => 'v3'),array("name" => 'v2', "value" => 'v2'),array("name" => 'v1', "value" => 'v1'))]),
                 $this->settingsOption('hr'),
                 $this->settingsOption('title', 'radarrCleanupTitle', ['text' => 'Radarr Cleanup']),
+                $this->settingsOption('checkbox', 'radarrCleanupEnabled', ['label' => 'Enable Radarr Cleanup']),
                 $this->settingsOption('select', 'radarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
                     ['name' => 'Yes', 'value' => 'true'],
                     ['name' => 'No', 'value' => 'false']

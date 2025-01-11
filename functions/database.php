@@ -141,37 +141,42 @@ trait Database {
                         $stmt = $this->sql->prepare($InsertPrepare);
                     }
 
-                    // Update 'clean' to true for shows that meet cleanup criteria
-                    try {
-                        // Default to false
-                        $Show['clean'] = false;
-
-                        // Check if it has been added longer than X days ago
-                        $DateAdded = new DateTime($Show['added']);
-                        $LastPlayedEpoch = false;
-                        if (isset($Show['Tautulli'])) {
-                            if (isset($Show['Tautulli']['last_played'])) {
-                                $LastPlayedEpoch = $Show['Tautulli']['last_played'] ?? false;
+                    // Update 'clean' to true for shows that meet cleanup criteria and if cleanup is enabled
+                    $cleanupEnabled = $this->pluginConfig['sonarrCleanupEnabled'] ?? false;
+                    if ($cleanupEnabled) {
+                        try {
+                            // Default to false
+                            $Show['clean'] = false;
+    
+                            // Check if it has been added longer than X days ago
+                            $DateAdded = new DateTime($Show['added']);
+                            $LastPlayedEpoch = false;
+                            if (isset($Show['Tautulli'])) {
+                                if (isset($Show['Tautulli']['last_played'])) {
+                                    $LastPlayedEpoch = $Show['Tautulli']['last_played'] ?? false;
+                                }
                             }
-                        }
-
-                        if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['sonarrCleanupMaxAge'])) {
-                            if ($LastPlayedEpoch) {
-                                // Check if it has been watched in longer than X days ago
-                                $LastPlayed = new DateTime("@$LastPlayedEpoch");
-                                if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+    
+                            if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+                                if ($LastPlayedEpoch) {
+                                    // Check if it has been watched in longer than X days ago
+                                    $LastPlayed = new DateTime("@$LastPlayedEpoch");
+                                    if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['sonarrCleanupMaxAge'])) {
+                                        $Show['clean'] = true;
+                                    }
+                                } else {
                                     $Show['clean'] = true;
                                 }
-                            } else {
-                                $Show['clean'] = true;
                             }
+                        } catch (Exception $e) {
+                            $this->logging->writeLog("MediaManager","Failed to update cleanup status for TV Shows.","error",$e);
+                            return array(
+                                'result' => 'Error',
+                                'message' => $e
+                            );
                         }
-                    } catch (Exception $e) {
-                        $this->logging->writeLog("MediaManager","Failed to update cleanup status for TV Shows.","error",$e);
-                        return array(
-                            'result' => 'Error',
-                            'message' => $e
-                        );
+                    } else {
+                        $Show['clean'] = false;
                     }
 
                     // Bind parameters and execute
