@@ -314,37 +314,42 @@ trait Database {
                         $stmt = $this->sql->prepare($InsertPrepare);
                     }
 
-                    // Update 'clean' to true for movies that meet cleanup criteria
-                    try {
-                        // Default to false
-                        $Movie['clean'] = false;
+                    // Update 'clean' to true for movies that meet cleanup criteria and if cleanup is enabled
+                    $cleanupEnabled = $this->pluginConfig['radarrCleanupEnabled'] ?? false;
+                    if ($cleanupEnabled) {
+                        try {
+                            // Default to false
+                            $Movie['clean'] = false;
 
-                        // Check if it has been added longer than X days ago
-                        $DateAdded = new DateTime($Movie['added']);
-                        $LastPlayedEpoch = false;
-                        if (isset($Movie['Tautulli'])) {
-                            if (isset($Movie['Tautulli']['last_played'])) {
-                                $LastPlayedEpoch = $Movie['Tautulli']['last_played'] ?? false;
+                            // Check if it has been added longer than X days ago
+                            $DateAdded = new DateTime($Movie['added']);
+                            $LastPlayedEpoch = false;
+                            if (isset($Movie['Tautulli'])) {
+                                if (isset($Movie['Tautulli']['last_played'])) {
+                                    $LastPlayedEpoch = $Movie['Tautulli']['last_played'] ?? false;
+                                }
                             }
-                        }
 
-                        if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['radarrCleanupMaxAge'])) {
-                            if ($LastPlayedEpoch) {
-                                // Check if it has been watched in longer than X days ago
-                                $LastPlayed = new DateTime("@$LastPlayedEpoch");
-                                if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                            if ($this->isDateOlderThanXDays($DateAdded,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                                if ($LastPlayedEpoch) {
+                                    // Check if it has been watched in longer than X days ago
+                                    $LastPlayed = new DateTime("@$LastPlayedEpoch");
+                                    if ($this->isDateOlderThanXDays($LastPlayed,$this->pluginConfig['radarrCleanupMaxAge'])) {
+                                        $Movie['clean'] = true;
+                                    }
+                                } else {
                                     $Movie['clean'] = true;
                                 }
-                            } else {
-                                $Movie['clean'] = true;
                             }
+                        } catch (Exception $e) {
+                            $this->logging->writeLog("MediaManager","Failed to update cleanup status for Movies.","error",$e);
+                            return array(
+                                'result' => 'Error',
+                                'message' => $e
+                            );
                         }
-                    } catch (Exception $e) {
-                        $this->logging->writeLog("MediaManager","Failed to update cleanup status for Movies.","error",$e);
-                        return array(
-                            'result' => 'Error',
-                            'message' => $e
-                        );
+                    } else {
+                        $Movie['clean'] = false;
                     }
 
                     // Bind parameters and execute
