@@ -444,17 +444,31 @@ trait Sonarr {
         if (!empty($ids)) {
             // .. run manual cleanup on one or more shows
         } else {
-            // .. run either manually or automatically invoked cleanup on all shows marked for cleaning
-            $ShowsToClean = $this->getTVShowsTableByCleanupState(true);
+            if (!$this->pluginConfig['sonarrCleanupReportOnly']) {
+                $ShowsToClean = $this->getTVShowsTableByCleanupState(true);
 
-            // Remove TV Shows with excluded tag
-            $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'];
-            $ShowsToClean = array_filter($ShowsToClean, function($show) use ($exclusionTag) {
-                $tags = explode(',', $show['tags']);
-                return !in_array($exclusionTag, $tags);
-            });
-    
-            return $ShowsToClean;
+                // Remove TV Shows with excluded tag (This should already have been done as part of sync, but just to be safe)
+                $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'];
+                $ShowsToClean = array_filter($ShowsToClean, function($show) use ($exclusionTag) {
+                    $tags = explode(',', $show['tags']);
+                    return !in_array($exclusionTag, $tags);
+                });
+
+                // Filter shows with more episodes than threshold
+                $sonarrCleanupEpisodesToKeep = $this->pluginConfig['sonarrCleanupEpisodesToKeep'];
+                $ShowsToClean = array_filter($ShowsToClean, function($show) use ($sonarrCleanupEpisodesToKeep) {
+                    if ($show['episodeFileCount'] > $sonarrCleanupEpisodesToKeep) {
+                        return $show;
+                    }
+                });
+
+                // Do the cleanup..
+                // .. run either manually or automatically invoked cleanup on all shows marked for cleaning
+                return $ShowsToClean;
+            } else {
+                $this->api->setAPIResponseMessage('Sonarr Cleanup Skipped, Report-Only Mode Enabled');
+                $this->logging->writeLog('MediaManager','Sonarr Cleanup Skipped, Report-Only Mode Enabled','info');
+            }
         }
     }
 }

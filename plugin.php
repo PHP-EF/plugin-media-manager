@@ -158,13 +158,10 @@ class MediaManager extends phpef {
                 $this->settingsOption('hr'),
                 $this->settingsOption('title', 'sonarrCleanupTitle', ['text' => 'Sonarr Cleanup']),
                 $this->settingsOption('checkbox', 'sonarrCleanupEnabled', ['label' => 'Enable Sonarr Cleanup']),
+                $this->settingsOption('checkbox', 'sonarrCleanupReportOnly', ['label' => 'Report-Only Mode', 'attr' => 'checked']),
                 $this->settingsOption('select', 'sonarrCleanupExclusionTag', ['label' => 'Tag to exclude TV Shows from Cleanup', 'options' => $SonarrTagOptions]),
                 $this->settingsOption('input', 'sonarrCleanupEpisodesToKeep', ['label' => 'Number of Episodes to Keep', 'placeholder' => '10']),
-                $this->settingsOption('input', 'sonarrCleanupMaxAge', ['label' => 'Maximum days before TV Show is cleaned up', 'placeholder' => '180']),
-                $this->settingsOption('select', 'sonarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
-                    ['name' => 'Yes', 'value' => 'true'],
-                    ['name' => 'No', 'value' => 'false']
-                ]])
+                $this->settingsOption('input', 'sonarrCleanupMaxAge', ['label' => 'Maximum days before TV Show is cleaned up', 'placeholder' => '180'])
             ),
             'Radarr' => array(
                 $this->settingsOption('url', 'radarrUrl', ['label' => 'Radarr API URL', 'placeholder' => 'http://server:port']),
@@ -173,10 +170,7 @@ class MediaManager extends phpef {
                 $this->settingsOption('hr'),
                 $this->settingsOption('title', 'radarrCleanupTitle', ['text' => 'Radarr Cleanup']),
                 $this->settingsOption('checkbox', 'radarrCleanupEnabled', ['label' => 'Enable Radarr Cleanup']),
-                $this->settingsOption('select', 'radarrReportOnly', ['label' => 'Report Only Mode (No Deletions)', 'options' => [
-                    ['name' => 'Yes', 'value' => 'true'],
-                    ['name' => 'No', 'value' => 'false']
-                ]]),
+                $this->settingsOption('checkbox', 'radarrCleanupReportOnly', ['label' => 'Report-Only Mode', 'attr' => 'checked']),
                 $this->settingsOption('select', 'radarrExclusionTag', ['label' => 'Tag to exclude Movies', 'options' => $RadarrTagOptions]),
                 $this->settingsOption('input', 'radarrCleanupMaxAge', ['label' => 'Maximum number of days before Movie is cleaned up', 'placeholder' => '1095'])
             ),

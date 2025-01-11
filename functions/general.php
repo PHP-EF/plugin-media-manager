@@ -27,14 +27,14 @@ trait General {
         $this->pluginConfig['episodesToKeep'] = $this->pluginConfig['episodesToKeep'] ?? 3;
         $this->pluginConfig['promptForFolderDeletion'] = $this->pluginConfig['promptForFolderDeletion'] ?? true;
         $this->pluginConfig['sonarrApiVersion'] = $this->pluginConfig['sonarrApiVersion'] ?? 'v3';
-        $this->pluginConfig['sonarrReportOnly'] = $this->pluginConfig['sonarrReportOnly'] ?? true;
         $this->pluginConfig['sonarrThrottlingSeasonThreshold'] = $this->pluginConfig['sonarrThrottlingSeasonThreshold'] ?? '4';
         $this->pluginConfig['sonarrThrottlingEpisodeThreshold'] = $this->pluginConfig['sonarrThrottlingEpisodeThreshold'] ?? '40';
         $this->pluginConfig['sonarrThrottlingEpisodeScanQty'] = $this->pluginConfig['sonarrThrottlingEpisodeScanQty'] ?? '10';
         $this->pluginConfig['sonarrCleanupEpisodesToKeep'] = $this->pluginConfig['sonarrCleanupEpisodesToKeep'] ?? '10';
         $this->pluginConfig['sonarrCleanupMaxAge'] = $this->pluginConfig['sonarrCleanupMaxAge'] ?? '180';
+        $this->pluginConfig['sonarrCleanupReportOnly'] = $this->pluginConfig['sonarrCleanupReportOnly'] ?? true;
         $this->pluginConfig['radarrApiVersion'] = $this->pluginConfig['radarrApiVersion'] ?? 'v3';
-        $this->pluginConfig['radarrReportOnly'] = $this->pluginConfig['radarrReportOnly'] ?? true;
+        $this->pluginConfig['radarrCleanupReportOnly'] = $this->pluginConfig['radarrCleanupReportOnly'] ?? true;
         $this->pluginConfig['radarrCleanupMaxAge'] = $this->pluginConfig['radarrCleanupMaxAge'] ?? '1095';
     }
 
