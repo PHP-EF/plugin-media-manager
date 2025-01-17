@@ -39,6 +39,10 @@ class DownloadQueueWidget implements WidgetInterface {
 				$this->phpef->settingsOption('enable', 'nzbgetEnabled'),
                 $this->phpef->settingsOption('refresh', 'nzbgetRefresh')
             ],
+            'Sabnzbd' => [
+				$this->phpef->settingsOption('enable', 'sabnzbdEnabled'),
+                $this->phpef->settingsOption('refresh', 'sabnzbdRefresh')
+            ],
             'Sonarr' => [
 				$this->phpef->settingsOption('enable', 'sonarrEnabled'),
                 $this->phpef->settingsOption('refresh', 'sonarrRefresh')
@@ -65,6 +69,8 @@ class DownloadQueueWidget implements WidgetInterface {
         $WidgetConfig['qbittorrentRefresh'] = $WidgetConfig['qbittorrentRefresh'] ?? 60000;
         $WidgetConfig['nzbgetEnabled'] = $WidgetConfig['nzbgetEnabled'] ?? false;
         $WidgetConfig['nzbgetRefresh'] = $WidgetConfig['nzbgetRefresh'] ?? 60000;
+        $WidgetConfig['sabnzbdEnabled'] = $WidgetConfig['sabnzbdEnabled'] ?? false;
+        $WidgetConfig['sabnzbdRefresh'] = $WidgetConfig['sabnzbdRefresh'] ?? 60000;
         $WidgetConfig['sonarrEnabled'] = $WidgetConfig['sonarrEnabled'] ?? false;
         $WidgetConfig['sonarrRefresh'] = $WidgetConfig['sonarrRefresh'] ?? 60000;
         $WidgetConfig['radarrEnabled'] = $WidgetConfig['radarrEnabled'] ?? false;
@@ -79,11 +85,12 @@ class DownloadQueueWidget implements WidgetInterface {
                 'utorrent' => $this->widgetConfig['utorrentRefresh'],
                 'qbittorrent' => $this->widgetConfig['qbittorrentRefresh'],
                 'nzbget' => $this->widgetConfig['nzbgetRefresh'],
+                'sabnzbd' => $this->widgetConfig['sabnzbdRefresh'],
                 'sonarr' => $this->widgetConfig['sonarrRefresh'],
                 'radarr' => $this->widgetConfig['radarrRefresh']
             ];
     
-            foreach (['utorrent', 'qbittorrent', 'nzbget', 'sonarr', 'radarr'] as $client) {
+            foreach (['utorrent', 'qbittorrent', 'nzbget', 'sabnzbd', 'sonarr', 'radarr'] as $client) {
                 if ($this->widgetConfig[$client . 'Enabled']) {
                     $scripts[] = "buildDownloaderCombined(\"$client\");";
                     $scripts[] = "homepageDownloader(\"$client\", \"{$timeouts[$client]}\");";

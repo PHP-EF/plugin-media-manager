@@ -41,6 +41,7 @@ class MediaManager extends phpef {
     uTorrent,
     qBittorrent,
     NzbGet,
+    Sabnzbd,
     SSO;
 
     private $pluginConfig;
@@ -234,6 +235,11 @@ class MediaManager extends phpef {
                 $this->settingsOption('test', '/api/mediamanager/nzbget/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET']),
                 $this->settingsOption('username', 'nzbgetUsername', ['label' => 'NzbGet Username']),
                 $this->settingsOption('password', 'nzbgetPassword'),
+            ),
+            'Sabnzbd' => array(
+                $this->settingsOption('url', 'sabnzbdURL', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('password', 'sabnzbdToken', ['label' => 'Sabnzbd Token', 'placeholder' => 'Your Sabnzbd Token']),
+                $this->settingsOption('test', '/api/mediamanager/sabnzbd/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET'])
             ),
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),
