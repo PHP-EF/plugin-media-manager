@@ -28,6 +28,13 @@ class DownloadQueueWidget implements WidgetInterface {
                 $this->phpef->settingsOption('checkbox', 'utorrentHideCompleted', ['label' => 'Hide Completed']),
                 $this->phpef->settingsOption('refresh', 'utorrentRefresh')
             ],
+            'qBittorrent' => [
+				$this->phpef->settingsOption('enable', 'qbittorrentEnabled'),
+                $this->phpef->settingsOption('checkbox', 'qbittorrentSeeding', ['label' => 'Hide Seeding']),
+                $this->phpef->settingsOption('checkbox', 'qbittorrentCompleted', ['label' => 'Hide Completed']),
+                $this->phpef->settingsOption('checkbox', 'qbittorrentReverseSorting', ['label' => 'Reverse Sort Order']),
+                $this->phpef->settingsOption('refresh', 'qbittorrentRefresh')
+            ],
             'NzbGet' => [
 				$this->phpef->settingsOption('enable', 'nzbgetEnabled'),
                 $this->phpef->settingsOption('refresh', 'nzbgetRefresh')
@@ -52,6 +59,10 @@ class DownloadQueueWidget implements WidgetInterface {
         $WidgetConfig['utorrentHideSeeding'] = $WidgetConfig['utorrentHideSeeding'] ?? false;
         $WidgetConfig['utorrentHideCompleted'] = $WidgetConfig['utorrentHideCompleted'] ?? false;
         $WidgetConfig['utorrentRefresh'] = $WidgetConfig['utorrentRefresh'] ?? 60000;
+        $WidgetConfig['qbittorrentEnabled'] = $WidgetConfig['qbittorrentEnabled'] ?? false;
+        $WidgetConfig['qbittorrentHideSeeding'] = $WidgetConfig['qbittorrentHideSeeding'] ?? false;
+        $WidgetConfig['qbittorrentHideCompleted'] = $WidgetConfig['qbittorrentHideCompleted'] ?? false;
+        $WidgetConfig['qbittorrentRefresh'] = $WidgetConfig['qbittorrentRefresh'] ?? 60000;
         $WidgetConfig['nzbgetEnabled'] = $WidgetConfig['nzbgetEnabled'] ?? false;
         $WidgetConfig['nzbgetRefresh'] = $WidgetConfig['nzbgetRefresh'] ?? 60000;
         $WidgetConfig['sonarrEnabled'] = $WidgetConfig['sonarrEnabled'] ?? false;
@@ -66,12 +77,13 @@ class DownloadQueueWidget implements WidgetInterface {
             $scripts = [];
             $timeouts = [
                 'utorrent' => $this->widgetConfig['utorrentRefresh'],
+                'qbittorrent' => $this->widgetConfig['qbittorrentRefresh'],
                 'nzbget' => $this->widgetConfig['nzbgetRefresh'],
                 'sonarr' => $this->widgetConfig['sonarrRefresh'],
                 'radarr' => $this->widgetConfig['radarrRefresh']
             ];
     
-            foreach (['utorrent', 'nzbget', 'sonarr', 'radarr'] as $client) {
+            foreach (['utorrent', 'qbittorrent', 'nzbget', 'sonarr', 'radarr'] as $client) {
                 if ($this->widgetConfig[$client . 'Enabled']) {
                     $scripts[] = "buildDownloaderCombined(\"$client\");";
                     $scripts[] = "homepageDownloader(\"$client\", \"{$timeouts[$client]}\");";

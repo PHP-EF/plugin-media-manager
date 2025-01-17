@@ -308,7 +308,7 @@ function homepageDownloader(type, timeout = 60000) {
         transmission: 'getTransmission',
         sonarr: 'getSonarrQueue',
         radarr: 'getRadarrQueue',
-        qBittorrent: 'getqBittorrent',
+        qbittorrent: 'getqbittorrent',
         deluge: 'getDeluge',
         rTorrent: 'getrTorrent',
         utorrent: 'getutorrent'
@@ -346,12 +346,12 @@ function buildDownloaderCombined(source) {
     let historyButton = 'HISTORY';
 
     const sourcesWithHistory = ['sabnzbd', 'nzbget'];
-    const sourcesWithQueueOnly = ['jdownloader', 'utorrent', 'transmission', 'qBittorrent', 'deluge', 'rTorrent', 'sonarr', 'radarr'];
+    const sourcesWithQueueOnly = ['jdownloader', 'utorrent', 'transmission', 'qbittorrent', 'deluge', 'rTorrent', 'sonarr', 'radarr'];
 
     const queue = sourcesWithQueueOnly.includes(source) || sourcesWithHistory.includes(source);
     const history = sourcesWithHistory.includes(source);
 
-    if (source === 'jdownloader' || source === 'transmission' || source === 'qBittorrent' || source === 'deluge' || source === 'rTorrent' || source === 'sonarr' || source === 'radarr') {
+    if (source === 'jdownloader' || source === 'transmission' || source === 'qbittorrent' || source === 'deluge' || source === 'rTorrent' || source === 'sonarr' || source === 'radarr') {
         queueButton = 'REFRESH';
     }
 
@@ -791,7 +791,7 @@ function buildDownloaderItem(array, source, type = 'none') {
             });
             break;
 
-        case 'qBittorrent':
+        case 'qbittorrent':
             if (array.content === false) {
                 queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
                 break;

@@ -36,8 +36,11 @@ trait General {
         $this->pluginConfig['radarrApiVersion'] = $this->pluginConfig['radarrApiVersion'] ?? 'v3';
         $this->pluginConfig['radarrCleanupReportOnly'] = $this->pluginConfig['radarrCleanupReportOnly'] ?? true;
         $this->pluginConfig['radarrCleanupMaxAge'] = $this->pluginConfig['radarrCleanupMaxAge'] ?? '1095';
-        $this->pluginConfig['uTorrentHideSeeding'] = $this->pluginConfig['uTorrentHideSeeding'] ?? false;
-        $this->pluginConfig['uTorrentHideCompleted'] = $this->pluginConfig['uTorrentHideCompleted'] ?? false;
+        $this->pluginConfig['utorrentHideSeeding'] = $this->pluginConfig['utorrentHideSeeding'] ?? false;
+        $this->pluginConfig['utorrentHideCompleted'] = $this->pluginConfig['utorrentHideCompleted'] ?? false;
+        $this->pluginConfig['qbittorrentHideSeeding'] = $this->pluginConfig['qbittorrentHideSeeding'] ?? false;
+        $this->pluginConfig['qbittorrentHideCompleted'] = $this->pluginConfig['qbittorrentHideCompleted'] ?? false;
+        $this->pluginConfig['qbittorrentApiVersion'] = $this->pluginConfig['qbittorrentApiVersion'] ?? 2;
     }
 
     // Generic Get API Results Function, to be shared across any API Wrappers

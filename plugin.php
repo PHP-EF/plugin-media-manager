@@ -39,6 +39,7 @@ class MediaManager extends phpef {
     Sonarr,
     Radarr,
     uTorrent,
+    qBittorrent,
     NzbGet,
     SSO;
 
@@ -220,6 +221,13 @@ class MediaManager extends phpef {
                 $this->settingsOption('test', '/api/mediamanager/utorrent/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET']),
                 $this->settingsOption('username', 'utorrentUsername', ['label' => 'uTorrent Username']),
                 $this->settingsOption('password', 'utorrentPassword', ['label' => 'uTorrent Password'])
+            ),
+            'qBittorrent' => array(
+                $this->settingsOption('url', 'qbittorrentUrl', ['label' => 'qBittorrent API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('test', '/api/mediamanager/qbittorrent/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET']),
+                $this->settingsOption('username', 'qbittorrentUsername', ['label' => 'qBittorrent Username']),
+                $this->settingsOption('password', 'qbittorrentPassword', ['label' => 'qBittorrent Password']),
+                $this->settingsOption('select', 'qbittorrentApiVersion', ['label' => 'qBittorrent API Version', 'options' => array(array("name" => 'v2', "value" => '2'),array("name" => 'v1', "value" => '1'), 'value' => '2')]),
             ),
             'NzbGet' => array(
                 $this->settingsOption('url', 'nzbgetURL', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
