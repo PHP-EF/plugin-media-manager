@@ -559,56 +559,56 @@ function buildDownloaderItem(array, source, type = 'none') {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
             }
             const nzbgetQueueItems = array.content.queueItems.result || [];
-        
+            const nzbgetHistoryItems = array.content.historyItems.result || [];
+
             if (nzbgetQueueItems.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-                break;
+            } else {
+                nzbgetQueueItems.forEach(v => {
+                    count += 1;
+                    const action = v.Status === "Downloading" ? 'pause' : 'resume';
+                    const actionIcon = v.Status === "Downloading" ? 'pause' : 'play';
+                    const percent = Math.floor((v.FileSizeMB - v.RemainingSizeMB) * 100 / v.FileSizeMB);
+                    const size = v.FileSizeMB * 1000000;
+                    v.Category = v.Category !== '' ? v.Category : 'Not Set';
+                    queue += `
+                    <tr>
+                        <td class="max-texts">${v.NZBName}</td>
+                        <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
+                        <!--<td class="downloader mouse" data-bs-target="${v.NZBID}" data-source="sabnzbd" data-action="${action}"><i class="fa fa-${actionIcon}"></i></td>-->
+                        <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
+                        <td class="hidden-xs">${humanFileSize(size, true)}</td>
+                        <td class="text-right">
+                            <div class="progress progress-lg m-b-0">
+                                <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                });
             }
-        
-            nzbgetQueueItems.forEach(v => {
-                count += 1;
-                const action = v.Status === "Downloading" ? 'pause' : 'resume';
-                const actionIcon = v.Status === "Downloading" ? 'pause' : 'play';
-                const percent = Math.floor((v.FileSizeMB - v.RemainingSizeMB) * 100 / v.FileSizeMB);
-                const size = v.FileSizeMB * 1000000;
-                v.Category = v.Category !== '' ? v.Category : 'Not Set';
-                queue += `
-                <tr>
-                    <td class="max-texts">${v.NZBName}</td>
-                    <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
-                    <!--<td class="downloader mouse" data-bs-target="${v.NZBID}" data-source="sabnzbd" data-action="${action}"><i class="fa fa-${actionIcon}"></i></td>-->
-                    <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
-                    <td class="hidden-xs">${humanFileSize(size, true)}</td>
-                    <td class="text-right">
-                        <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
 
-            if (array.content.historyItems.result.length === 0) {
+            if (nzbgetHistoryItems.length === 0) {
                 history = '<tr><td class="max-texts" lang="en">Nothing in history</td></tr>';
+            } else {
+                nzbgetHistoryItems.forEach(v => {
+                    v.Category = v.Category !== '' ? v.Category : 'Not Set';
+                    const size = v.FileSizeMB * 1000000;
+                    history += `
+                    <tr>
+                        <td class="max-texts">${v.NZBName}</td>
+                        <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
+                        <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
+                        <td class="hidden-xs">${humanFileSize(size, true)}</td>
+                        <td class="text-right">
+                            <div class="progress progress-lg m-b-0">
+                                <div class="progress-bar progress-bar-info" style="width: 100%;" role="progressbar">100%</div>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                });
             }
-
-            array.content.historyItems.result.forEach(v => {
-                v.Category = v.Category !== '' ? v.Category : 'Not Set';
-                const size = v.FileSizeMB * 1000000;
-                history += `
-                <tr>
-                    <td class="max-texts">${v.NZBName}</td>
-                    <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
-                    <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
-                    <td class="hidden-xs">${humanFileSize(size, true)}</td>
-                    <td class="text-right">
-                        <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: 100%;" role="progressbar">100%</div>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
             break;
 
         case 'transmission':
@@ -736,7 +736,7 @@ function buildDownloaderItem(array, source, type = 'none') {
             const sonarrQueueItems = array.content.queueItems || [];
             const sonarrQueueRecords = array.content.queueItems.records || [];
         
-            if (sonarrQueueItems.length === 0 || sonarrQueueRecords.length === 0) {
+            if (sonarrQueueItems.length === 0 && sonarrQueueRecords.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
                 break;
             }
@@ -774,7 +774,7 @@ function buildDownloaderItem(array, source, type = 'none') {
             const radarrQueueItems = array.content.queueItems || [];
             const radarrQueueRecords = array.content.queueItems.records || [];
         
-            if (radarrQueueItems.length === 0 || radarrQueueRecords.length === 0) {
+            if (radarrQueueItems.length === 0 && radarrQueueRecords.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
                 break;
             }
