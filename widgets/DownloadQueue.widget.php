@@ -81,10 +81,13 @@ class DownloadQueueWidget implements WidgetInterface {
             $scripts = implode("\n", $scripts);
     
             return <<<EOF
-                <script src="/api/page/plugin/Media Manager/js"></script>
                 <div id="homepageOrderdownloader">
                     <script>
-                        $scripts
+                        appendScript({ src: "/api/page/plugin/Media Manager/js" })
+                        .then(() => {
+                            $scripts
+                        })
+                        .catch(error => console.error(error));
                     </script>
                 </div>
                 <link href="/api/page/plugin/Media Manager/css" rel="stylesheet">

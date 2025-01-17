@@ -119,4 +119,9 @@ return '
         </div>
     </div>
 </div>
+
+<script>
+// Initate Movies Table
+$("#moviesTable").bootstrapTable();
+</script>
 ';

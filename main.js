@@ -88,16 +88,6 @@ function customQueryParams(params) {
     };
 }
 
-// Initate TV Shows Table
-$("#tvShowsTable").bootstrapTable();
-
-// Initate Movies Table
-$("#moviesTable").bootstrapTable();
-
-
-
-
-
 
 
 

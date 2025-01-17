@@ -123,4 +123,8 @@ return '
         </div>
     </div>
 </div>
+<script>
+// Initate TV Shows Table
+$("#tvShowsTable").bootstrapTable();
+</script>
 ';

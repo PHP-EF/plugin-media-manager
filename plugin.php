@@ -183,7 +183,7 @@ class MediaManager extends phpef {
             ),
             'Plex' => array(
 				$this->settingsOption('js', 'pluginJs', ['src' => '/api/page/plugin/Media Manager/js']),
-				$this->settingsOption('js', 'pluginScript', ['script' => "
+				$this->settingsOption('js', 'pluginScript', ['id' => 'plexHeaders', 'script' => "
 				function getPlexHeaders(){
 					return {
 						'Accept': 'application/json',
