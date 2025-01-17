@@ -33,17 +33,17 @@ trait uTorrent {
             $tokenElement = $dom->getElementById('token');
             $id = $tokenElement ? $tokenElement->textContent : null;
 			$uTorrentConfig = array(
-				"uTorrentToken" => $id,
-				"uTorrentCookie" => "",
+				"utorrentToken" => $id,
+				"utorrentCookie" => "",
 			);
 			$reflection = new ReflectionClass($response->cookies);
 			$cookie = $reflection->getProperty("cookies");
 			$cookie->setAccessible(true);
 			$cookie = $cookie->getValue($response->cookies);
 			if ($cookie['GUID']) {
-				$uTorrentConfig['uTorrentCookie'] = $cookie['GUID']->value;
+				$uTorrentConfig['utorrentCookie'] = $cookie['GUID']->value;
 			}
-			if ($uTorrentConfig['uTorrentToken'] || $uTorrentConfig['uTorrentCookie']) {
+			if ($uTorrentConfig['utorrentToken'] || $uTorrentConfig['utorrentCookie']) {
                 $config = $this->config->get();
                 $this->config->setPlugin($config, $uTorrentConfig, 'Media Manager');
 			}
