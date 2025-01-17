@@ -719,7 +719,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                     <td class="hidden-xs">${size}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: ${v.Percent}%;" role="progressbar">${v.Percent}</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${v.Percent};" role="progressbar">${v.Percent}</div>
                         </div>
                     </td>
                 </tr>
