@@ -308,155 +308,124 @@ $('.plexOAuth').on('click', function() {
 // ** Widgets ** //
 
 // ** Queues ** //
-var timeouts = {};
-function homepageDownloader(type, timeout){
-	var timeout = (typeof timeout !== 'undefined') ? timeout : 60000;
-	switch (type) {
-        case 'jdownloader':
-            var action = 'getJdownloader';
-            break;
-		case 'sabnzbd':
-			var action = 'getSabnzbd';
-			break;
-		case 'nzbget':
-			var action = 'getNzbget';
-			break;
-		case 'transmission':
-			var action = 'getTransmission';
-			break;
-		case 'sonarr':
-			var action = 'getSonarrQueue';
-			break;
-		case 'radarr':
-			var action = 'getRadarrQueue';
-			break;
-		case 'qBittorrent':
-			var action = 'getqBittorrent';
-			break;
-		case 'deluge':
-			var action = 'getDeluge';
-			break;
-	        case 'rTorrent':
-			var action = 'getrTorrent';
-			break;
-                case 'utorrent':
-                        var action = 'getutorrent';
-                        break;
-		default:
+const timeouts = {};
 
-	}
-	let lowerType = type.toLowerCase();
-	queryAPI('GET','api/mediamanager/'+lowerType+'/queue').done(function(data) {
+function homepageDownloader(type, timeout = 60000) {
+    const actions = {
+        jdownloader: 'getJdownloader',
+        sabnzbd: 'getSabnzbd',
+        nzbget: 'getNzbget',
+        transmission: 'getTransmission',
+        sonarr: 'getSonarrQueue',
+        radarr: 'getRadarrQueue',
+        qBittorrent: 'getqBittorrent',
+        deluge: 'getDeluge',
+        rTorrent: 'getrTorrent',
+        utorrent: 'getutorrent'
+    };
+
+    const action = actions[type];
+    if (!action) return;
+
+    const lowerType = type.toLowerCase();
+    queryAPI('GET', `api/mediamanager/${lowerType}/queue`).done(data => {
         try {
-            let response = data.data;
-	        if(response !== null){
-		        buildDownloaderItem(response, type);
-	        }
-        }catch(e) {
-            toast('Error',"",e,"danger");
+            const response = data.data;
+            if (response !== null) {
+                buildDownloaderItem(response, type);
+            }
+        } catch (e) {
+            toast('Error', "", e, "danger");
         }
-	}).fail(function(xhr) {
-		toast('Error',"",xhr,"danger");
-	});
-	let timeoutTitle = type+'-Queue';
-	if(typeof timeouts[timeoutTitle] !== 'undefined'){ clearTimeout(timeouts[timeoutTitle]); }
-	timeouts[timeoutTitle] = setTimeout(function(){ homepageDownloader(type,timeout); }, timeout);
-	delete timeout;
-}
-function buildDownloaderCombined(source){
-    var first = ($('.combinedDownloadRow').length == 0) ? true : false;
-    var active = (first) ? 'active show' : '';
-    var queueButton = 'QUEUE';
-    var historyButton = 'HISTORY';
-    switch (source) {
-        case 'jdownloader':
-            var queue = true;
-            var history = false;
-            queueButton = 'REFRESH';
-            break;
-        case 'sabnzbd':
-        case 'nzbget':
-            var queue = true;
-            var history = true;
-            break;
-        case 'utorrent':
-            var queue = true;
-            break;
-        case 'transmission':
-        case 'qBittorrent':
-        case 'deluge':
-        case 'rTorrent':
-	    case 'sonarr':
-	    case 'radarr':
-            var queue = true;
-            var history = false;
-            queueButton = 'REFRESH';
-            break;
-        default:
-            var queue = false;
-            var history = false;
+    }).fail(xhr => {
+        toast('Error', "", xhr, "danger");
+    });
 
+    const timeoutTitle = `${type}-Queue`;
+    if (timeouts[timeoutTitle]) {
+        clearTimeout(timeouts[timeoutTitle]);
     }
-    var mainMenu = `<ul class="nav customtab nav-tabs combinedMenuList" role="tablist">`;
-    var addToMainMenu = `<li role="presentation" class="`+active+`"><a onclick="homepageDownloader('`+source+`')" href="#combined-`+source+`" aria-controls="home" role="tab" data-bs-toggle="tab" aria-expanded="true"><span class=""><img src="/api/image/plugin/Media Manager/`+source+`/png" class="widgetTitleImage"><span class="badge bg-info downloaderCount" id="count-`+source+`"><i class="fa fa-spinner fa-spin"></i></span></span></a></li>`;
-    var listing = '';
-    var headerAlt = '';
-    var header = '';
-    var menu = `<ul class="nav customtab nav-tabs m-t-5" role="tablist">`;
-    if(queue){
+    timeouts[timeoutTitle] = setTimeout(() => homepageDownloader(type, timeout), timeout);
+}
+
+function buildDownloaderCombined(source) {
+    const first = $('.combinedDownloadRow').length === 0;
+    const activeLi = first ? 'active show' : '';
+    const activeA = first ? 'active' : '';
+    let queueButton = 'QUEUE';
+    let historyButton = 'HISTORY';
+
+    const sourcesWithHistory = ['sabnzbd', 'nzbget'];
+    const sourcesWithQueueOnly = ['jdownloader', 'utorrent', 'transmission', 'qBittorrent', 'deluge', 'rTorrent', 'sonarr', 'radarr'];
+
+    const queue = sourcesWithQueueOnly.includes(source) || sourcesWithHistory.includes(source);
+    const history = sourcesWithHistory.includes(source);
+
+    if (source === 'jdownloader' || source === 'transmission' || source === 'qBittorrent' || source === 'deluge' || source === 'rTorrent' || source === 'sonarr' || source === 'radarr') {
+        queueButton = 'REFRESH';
+    }
+
+    let mainMenu = `<ul class="nav customtab nav-tabs combinedMenuList" role="tablist">`;
+    const addToMainMenu = `<li role="presentation" class="${activeLi}"><a onclick="homepageDownloader('${source}')" href="#combined-${source}" aria-controls="home" role="tab" data-bs-toggle="tab" aria-expanded="true" class="${activeA}"><span class=""><img src="/api/image/plugin/Media Manager/${source}/png" class="widgetTitleImage"><span class="badge bg-info downloaderCount" id="count-${source}"><i class="fa fa-spinner fa-spin"></i></span></span></a></li>`;
+    let listing = '';
+    let menu = `<ul class="nav customtab nav-tabs m-t-5" role="tablist">`;
+
+    if (queue) {
         menu += `
-			<li role="presentation" class="active" onclick="homepageDownloader('`+source+`')"><a href="#`+source+`-queue" aria-controls="home" role="tab" data-bs-toggle="tab" aria-expanded="true"><span class="visible-xs"><i class="ti-download"></i></span><span class="hidden-xs">`+queueButton+`</span></a></li>
-			`;
-        listing += `
-		<div role="tabpanel" class="tab-pane fade active in show" id="`+source+`-queue">
-			<div class="inbox-center table-responsive">
-				<table class="table table-hover">
-					<tbody class="`+source+`-queue"></tbody>
-				</table>
-			</div>
-			<div class="clearfix"></div>
-		</div>
-		`;
-    }
-    if(history){
-        menu += `
-		<li role="presentation" class=""><a href="#`+source+`-history" aria-controls="profile" role="tab" data-bs-toggle="tab" aria-expanded="false"><span class="visible-xs"><i class="ti-time"></i></span> <span class="hidden-xs">`+historyButton+`</span></a></li>
-		`;
-        listing += `
-		<div role="tabpanel" class="tab-pane fade" id="`+source+`-history">
-			<div class="inbox-center table-responsive">
-				<table class="table table-hover">
-					<tbody class="`+source+`-history"></tbody>
-				</table>
-			</div>
-			<div class="clearfix"></div>
-		</div>
-		`;
-    }
-    menu += '<li class="'+source+'-downloader-action"></li></ul><div class="clearfix"></div>';
-    menu = ((queue) && (history)) ? menu : '';
-    var listingMain = '<div role="tabpanel" class="tab-pane fade '+active+' in" id="combined-'+source+'">'+menu+'<div class="tab-content m-t-0 listingSingle">'+listing+'</div></div>';
-    mainMenu += (first) ? addToMainMenu + '</ul>' : '';
-    if(first){
-        var header = `
-        <div class="m-b-0 p-b-0 p-10 ">
-            `+mainMenu+`
-            <div class="clearfix"></div>
-        </div>
+            <li role="presentation" class="active" onclick="homepageDownloader('${source}')"><a href="#${source}-queue" aria-controls="home" role="tab" data-bs-toggle="tab" aria-expanded="true"><span class="visible-xs"><i class="ti-download"></i></span><span class="hidden-xs">${queueButton}</span></a></li>
         `;
-        var built = `
-        <div class="row combinedDownloadRow">
-            `+headerAlt+`
-            <div class="col-lg-12">
-                `+header+`
-                <div class="p-0">
-                    <div class="tab-content m-t-0 listingMain">`+listingMain+`</div>
+        listing += `
+            <div role="tabpanel" class="tab-pane fade active in show" id="${source}-queue">
+                <div class="inbox-center table-responsive">
+                    <table class="table table-hover">
+                        <tbody class="${source}-queue"></tbody>
+                    </table>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        `;
+    }
+
+    if (history) {
+        menu += `
+            <li role="presentation" class=""><a href="#${source}-history" aria-controls="profile" role="tab" data-bs-toggle="tab" aria-expanded="false"><span class="visible-xs"><i class="ti-time"></i></span> <span class="hidden-xs">${historyButton}</span></a></li>
+        `;
+        listing += `
+            <div role="tabpanel" class="tab-pane fade" id="${source}-history">
+                <div class="inbox-center table-responsive">
+                    <table class="table table-hover">
+                        <tbody class="${source}-history"></tbody>
+                    </table>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        `;
+    }
+
+    menu += `<li class="${source}-downloader-action"></li></ul><div class="clearfix"></div>`;
+    menu = (queue && history) ? menu : '';
+    const listingMain = `<div role="tabpanel" class="tab-pane fade ${activeLi} in" id="combined-${source}">${menu}<div class="tab-content m-t-0 listingSingle">${listing}</div></div>`;
+    mainMenu += first ? addToMainMenu + '</ul>' : '';
+
+    if (first) {
+        const header = `
+            <div class="m-b-0 p-b-0 p-10 ">
+                ${mainMenu}
+                <div class="clearfix"></div>
+            </div>
+        `;
+        const built = `
+            <div class="row combinedDownloadRow">
+                <div class="col-lg-12">
+                    ${header}
+                    <div class="p-0">
+                        <div class="tab-content m-t-0 listingMain">${listingMain}</div>
+                    </div>
                 </div>
             </div>
-        </div>
         `;
         $('#homepageOrderdownloader').html(built);
-    }else{
+    } else {
         $(addToMainMenu).appendTo('.combinedMenuList');
         $(listingMain).appendTo('.listingMain');
     }
