@@ -431,162 +431,176 @@ function buildDownloaderCombined(source) {
     }
 }
 
-function buildDownloaderItem(array, source, type='none'){
-    var queue = '';
-    var count = 0;
-    var history = '';
-	switch (source) {
+function buildDownloaderItem(array, source, type = 'none') {
+    let queue = '';
+    let count = 0;
+    let history = '';
+
+    const getStatusAction = (status) => {
+        const statusActions = {
+            RUNNING: `<tr><td>
+                        <a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="pause" data-bs-target="main"><i class="fa fa-pause"></i></span></a>
+                        <a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="stop" data-bs-target="main"><i class="fa fa-stop"></i></span></a>
+                      </td></tr>`,
+            PAUSE: `<tr><td><a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="resume" data-bs-target="main"><i class="fa fa-fast-forward"></i></span></a></td></tr>`,
+            default: `<tr><td><a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="start" data-bs-target="main"><i class="fa fa-play"></i></span></a></td></tr>`
+        };
+        return statusActions[status] || statusActions.default;
+    };
+
+    const buildQueueItems = (items, status) => {
+        items.forEach(v => {
+            count += 1;
+            const speed = v.speed || 'Stopped';
+            const eta = v.eta || (v.percentage === '100' ? '--' : '--');
+            const enabled = v.enabled || 'Disabled';
+            queue += `
+            <tr>
+                <td class="max-texts">${v.name}</td>
+                <td>${speed}</td>
+                <td class="hidden-xs" alt="${v.done}">${v.size}</td>
+                <td class="hidden-xs">${eta}</td>
+                <td class="text-right">
+                    <div class="progress progress-lg m-b-0">
+                        <div class="progress-bar progress-bar-info" style="width: ${v.percentage}%;" role="progressbar">${v.percentage}%</div>
+                    </div>
+                </td>
+            </tr>
+            `;
+        });
+    };
+
+    switch (source) {
         case 'jdownloader':
-            if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
                 break;
             }
 
-            if(array.content.queueItems.length == 0 && array.content.grabberItems.length == 0 && array.content.encryptedItems.length == 0 && array.content.offlineItems.length == 0){
+            if (array.content.queueItems.length === 0 && array.content.grabberItems.length === 0 && array.content.encryptedItems.length === 0 && array.content.offlineItems.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-            }else{
-                if(array.content.$status[0] == 'RUNNING') {
-                    queue += `
-                        <tr><td>
-                            <a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="pause" data-bs-target="main"><i class="fa fa-pause"></i></span></a>
-                            <a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="stop" data-bs-target="main"><i class="fa fa-stop"></i></span></a>
-                        </td></tr>
-                        `;
-                }else if(array.content.$status[0] == 'PAUSE'){
-                    queue += `<tr><td><a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="resume" data-bs-target="main"><i class="fa fa-fast-forward"></i></span></a></td></tr>`;
-                }else{
-                    queue += `<tr><td><a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="start" data-bs-target="main"><i class="fa fa-play"></i></span></a></td></tr>`;
-                }
-                if(array.content.$status[1]) {
+            } else {
+                queue += getStatusAction(array.content.$status[0]);
+                if (array.content.$status[1]) {
                     queue += `<tr><td><a href="#" onclick="return false;"><span class="downloader mouse" data-source="jdownloader" data-action="update" data-bs-target="main"><i class="fa fa-globe"></i></span></a></td></tr>`;
                 }
             }
-            $.each(array.content.queueItems, function(i,v) {
-                count = count + 1;
-                if(v.speed == null){
-                    v.speed = 'Stopped';
-                }
-                if(v.eta == null){
-                    if(v.percentage == '100'){
-                        v.speed = 'Completed';
-                        v.eta = '--';
-                    }else{
-                        v.eta = '--';
-                    }
-                }
-                if(v.enabled == null){
-                    v.speed = 'Disabled';
-                }
+
+            buildQueueItems(array.content.queueItems, 'queue');
+            buildQueueItems(array.content.grabberItems, 'grabber');
+            buildQueueItems(array.content.encryptedItems, 'encrypted');
+            buildQueueItems(array.content.offlineItems, 'offline');
+            break;
+
+        case 'sabnzbd':
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
+                break;
+            }
+
+            const sabnzbdState = array.content.queueItems.queue.paused ? 
+                `<a href="#" onclick="return false;"><span class="downloader mouse" data-source="sabnzbd" data-action="resume" data-bs-target="main"><i class="fa fa-play"></i></span></a>` : 
+                `<a href="#" onclick="return false;"><span class="downloader mouse" data-source="sabnzbd" data-action="pause" data-bs-target="main"><i class="fa fa-pause"></i></span></a>`;
+            $('.sabnzbd-downloader-action').html(sabnzbdState);
+
+            if (array.content.queueItems.queue.slots.length === 0) {
+                queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
+            }
+
+            array.content.queueItems.queue.slots.forEach(v => {
+                count += 1;
+                const action = v.status === "Downloading" ? 'pause' : 'resume';
+                const actionIcon = v.status === "Downloading" ? 'pause' : 'play';
                 queue += `
                 <tr>
-                    <td class="max-texts">`+v.name+`</td>
-                    <td>`+v.speed+`</td>
-                    <td class="hidden-xs" alt="`+v.done+`">`+v.size+`</td>
-                    <td class="hidden-xs">`+v.eta+`</td>
+                    <td class="max-texts">${v.filename}</td>
+                    <td class="hidden-xs sabnzbd-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="downloader mouse" data-bs-target="${v.nzo_id}" data-source="sabnzbd" data-action="${action}"><i class="fa fa-${actionIcon}"></i></td>
+                    <td class="hidden-xs"><span class="label label-info">${v.cat}</span></td>
+                    <td class="hidden-xs">${v.size}</td>
+                    <td class="hidden-xs" alt="${v.eta}">${v.timeleft}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+v.percentage+`%;" role="progressbar">`+v.percentage+`%</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${v.percentage}%;" role="progressbar">${v.percentage}%</div>
                         </div>
                     </td>
                 </tr>
                 `;
             });
-            $.each(array.content.grabberItems, function(i,v) {
-                count = count + 1;
-                queue += `
+
+            if (array.content.historyItems.history.slots.length === 0) {
+                history = '<tr><td class="max-texts" lang="en">Nothing in history</td></tr>';
+            }
+
+            array.content.historyItems.history.slots.forEach(v => {
+                history += `
                 <tr>
-                    <td class="max-texts">`+v.name+`</td>
-                    <td>Online</td>
-                    <td class="hidden-xs"> -- </td>
-                    <td class="hidden-xs"> -- </td>
+                    <td class="max-texts">${v.name}</td>
+                    <td class="hidden-xs sabnzbd-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs"><span class="label label-info">${v.category}</span></td>
+                    <td class="hidden-xs">${v.size}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: 0%;" role="progressbar">0%</div>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
-            $.each(array.content.encryptedItems, function(i,v) {
-                count = count + 1;
-                queue += `
-                <tr>
-                    <td class="max-texts">`+v.name+`</td>
-                    <td>Encrypted</td>
-                    <td class="hidden-xs"> -- </td>
-                    <td class="hidden-xs"> -- </td>
-                    <td class="text-right">
-                        <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: 0%;" role="progressbar">0%</div>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
-            $.each(array.content.offlineItems, function(i,v) {
-                count = count + 1;
-                queue += `
-                <tr>
-                    <td class="max-texts">`+v.name+`</td>
-                    <td>Offline</td>
-                    <td class="hidden-xs"> -- </td>
-                    <td class="hidden-xs"> -- </td>
-                    <td class="text-right">
-                        <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: 0%;" role="progressbar">0%</div>
+                            <div class="progress-bar progress-bar-info" style="width: 100%;" role="progressbar">100%</div>
                         </div>
                     </td>
                 </tr>
                 `;
             });
             break;
-		case 'sabnzbd':
-            if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
-                break;
-            }
-            if(array.content.queueItems.queue.paused){
-                var state = `<a href="#" onclick="return false;"><span class="downloader mouse" data-source="sabnzbd" data-action="resume" data-bs-target="main"><i class="fa fa-play"></i></span></a>`;
-                var active = 'grayscale';
-            }else{
-                var state = `<a href="#" onclick="return false;"><span class="downloader mouse" data-source="sabnzbd" data-action="pause" data-bs-target="main"><i class="fa fa-pause"></i></span></a>`;
-                var active = '';
-            }
-            $('.sabnzbd-downloader-action').html(state);
 
-            if(array.content.queueItems.queue.slots.length == 0){
+        case 'nzbget':
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
+                break;
+            }
+
+            if (array.content.queueItems.result.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
             }
-            $.each(array.content.queueItems.queue.slots, function(i,v) {
-                count = count + 1;
-                var action = (v.status == "Downloading") ? 'pause' : 'resume';
-                var actionIcon = (v.status == "Downloading") ? 'pause' : 'play';
+            const nzbgetQueueItems = array.content.queueItems.result || [];
+        
+            if (nzbgetQueueItems.length === 0) {
+                queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
+                break;
+            }
+        
+            nzbgetQueueItems.forEach(v => {
+                count += 1;
+                const action = v.Status === "Downloading" ? 'pause' : 'resume';
+                const actionIcon = v.Status === "Downloading" ? 'pause' : 'play';
+                const percent = Math.floor((v.FileSizeMB - v.RemainingSizeMB) * 100 / v.FileSizeMB);
+                const size = v.FileSizeMB * 1000000;
+                v.Category = v.Category !== '' ? v.Category : 'Not Set';
                 queue += `
                 <tr>
-                    <td class="max-texts">`+v.filename+`</td>
-                    <td class="hidden-xs sabnzbd-`+cleanClass(v.status)+`">`+v.status+`</td>
-                    <td class="downloader mouse" data-bs-target="`+v.nzo_id+`" data-source="sabnzbd" data-action="`+action+`"><i class="fa fa-`+actionIcon+`"></i></td>
-                    <td class="hidden-xs"><span class="label label-info">`+v.cat+`</span></td>
-                    <td class="hidden-xs">`+v.size+`</td>
-                    <td class="hidden-xs" alt="`+v.eta+`">`+v.timeleft+`</td>
+                    <td class="max-texts">${v.NZBName}</td>
+                    <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
+                    <!--<td class="downloader mouse" data-bs-target="${v.NZBID}" data-source="sabnzbd" data-action="${action}"><i class="fa fa-${actionIcon}"></i></td>-->
+                    <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
+                    <td class="hidden-xs">${humanFileSize(size, true)}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+v.percentage+`%;" role="progressbar">`+v.percentage+`%</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
                         </div>
                     </td>
                 </tr>
                 `;
             });
-            if(array.content.historyItems.history.slots.length == 0){
+
+            if (array.content.historyItems.result.length === 0) {
                 history = '<tr><td class="max-texts" lang="en">Nothing in history</td></tr>';
             }
-            $.each(array.content.historyItems.history.slots, function(i,v) {
+
+            array.content.historyItems.result.forEach(v => {
+                v.Category = v.Category !== '' ? v.Category : 'Not Set';
+                const size = v.FileSizeMB * 1000000;
                 history += `
                 <tr>
-                    <td class="max-texts">`+v.name+`</td>
-                    <td class="hidden-xs sabnzbd-`+cleanClass(v.status)+`">`+v.status+`</td>
-                    <td class="hidden-xs"><span class="label label-info">`+v.category+`</span></td>
-                    <td class="hidden-xs">`+v.size+`</td>
+                    <td class="max-texts">${v.NZBName}</td>
+                    <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
+                    <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
+                    <td class="hidden-xs">${humanFileSize(size, true)}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
                             <div class="progress-bar progress-bar-info" style="width: 100%;" role="progressbar">100%</div>
@@ -595,245 +609,183 @@ function buildDownloaderItem(array, source, type='none'){
                 </tr>
                 `;
             });
-			break;
-		case 'nzbget':
-            if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
+            break;
+
+        case 'transmission':
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
                 break;
             }
-            if(array.content.queueItems.result.length == 0){
+
+            if (array.content.queueItems.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
             }
-            $.each(array.content.queueItems.result, function(i,v) {
-                count = count + 1;
-                var action = (v.Status == "Downloading") ? 'pause' : 'resume';
-                var actionIcon = (v.Status == "Downloading") ? 'pause' : 'play';
-                var percent = Math.floor((v.FileSizeMB - v.RemainingSizeMB) * 100 / v.FileSizeMB);
-                var size = v.FileSizeMB * 1000000;
-                v.Category = (v.Category !== '') ? v.Category : 'Not Set';
+
+            array.content.queueItems.forEach(v => {
+                count += 1;
+                const statusMap = {
+                    7: 'No Peers',
+                    6: 'Seeding',
+                    5: 'Seeding Queued',
+                    4: 'Downloading',
+                    3: 'Queued',
+                    2: 'Checking Files',
+                    1: 'File Check Queued',
+                    0: 'Complete'
+                };
+                const status = statusMap[v.status] || 'Complete';
+                const percent = Math.floor(v.percentDone * 100);
+                v.Category = v.Category !== '' ? v.Category : 'Not Set';
                 queue += `
                 <tr>
-                    <td class="max-texts">`+v.NZBName+`</td>
-                    <td class="hidden-xs nzbget-`+cleanClass(v.Status)+`">`+v.Status+`</td>
-                    <!--<td class="downloader mouse" data-bs-target="`+v.NZBID+`" data-source="sabnzbd" data-action="`+action+`"><i class="fa fa-`+actionIcon+`"></i></td>-->
-                    <td class="hidden-xs"><span class="label label-info">`+v.Category+`</span></td>
-                    <td class="hidden-xs">`+humanFileSize(size,true)+`</td>
+                    <td class="max-texts">${v.name}</td>
+                    <td class="hidden-xs transmission-${cleanClass(status)}">${status}</td>
+                    <td class="hidden-xs">${v.downloadDir}</td>
+                    <td class="hidden-xs">${humanFileSize(v.totalSize, true)}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+percent+`%;" role="progressbar">`+percent+`%</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
                         </div>
                     </td>
                 </tr>
                 `;
             });
-            if(array.content.historyItems.result.length == 0){
-                history = '<tr><td class="max-texts" lang="en">Nothing in history</td></tr>';
-            }
-            $.each(array.content.historyItems.result, function(i,v) {
-                v.Category = (v.Category !== '') ? v.Category : 'Not Set';
-                var size = v.FileSizeMB * 1000000;
-                history += `
-                <tr>
-                    <td class="max-texts">`+v.NZBName+`</td>
-                    <td class="hidden-xs nzbget-`+cleanClass(v.Status)+`">`+v.Status+`</td>
-                    <td class="hidden-xs"><span class="label label-info">`+v.Category+`</span></td>
-                    <td class="hidden-xs">`+humanFileSize(size,true)+`</td>
-                    <td class="text-right">
-                        <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: 100%;" role="progressbar">100%</div>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
-			break;
-		case 'transmission':
-            if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
-                break;
-            }
-            if(array.content.queueItems == 0){
-                queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-            }
-            $.each(array.content.queueItems, function(i,v) {
-                count = count + 1;
-                switch (v.status) {
-                    case 7:
-                    case '7':
-                        var status = 'No Peers';
-                        break;
-                    case 6:
-                    case '6':
-                        var status = 'Seeding';
-                        break;
-                    case 5:
-                    case '5':
-                        var status = 'Seeding Queued';
-                        break;
-                    case 4:
-                    case '4':
-                        var status = 'Downloading';
-                        break;
-                    case 3:
-                    case '3':
-                        var status = 'Queued';
-                        break;
-                    case 2:
-                    case '2':
-                        var status = 'Checking Files';
-                        break;
-                    case 1:
-                    case '1':
-                        var status = 'File Check Queued';
-                        break;
-                    case 0:
-                    case '0':
-                        var status = 'Complete';
-                        break;
-                    default:
-                        var status = 'Complete';
-                }
-                var percent = Math.floor(v.percentDone * 100);
-                v.Category = (v.Category !== '') ? v.Category : 'Not Set';
-                queue += `
-                <tr>
-                    <td class="max-texts">`+v.name+`</td>
-                    <td class="hidden-xs transmission-`+cleanClass(status)+`">`+status+`</td>
-                    <td class="hidden-xs">`+v.downloadDir+`</td>
-                    <td class="hidden-xs">`+humanFileSize(v.totalSize,true)+`</td>
-                    <td class="text-right">
-                        <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+percent+`%;" role="progressbar">`+percent+`%</div>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
-			break;
+            break;
+
         case 'rTorrent':
-            if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
                 break;
             }
-            if(array.content.queueItems == 0){
+
+            if (array.content.queueItems.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
             }
-            $.each(array.content.queueItems, function(i,v) {
-                count = count + 1;
-                var percent = Math.floor((v.downloaded / v.size) * 100);
-                var size = v.size != -1 ? humanFileSize(v.size,false) : "?";
-                var upload = v.seed !== '' ? humanFileSize(v.seed,true) : "0 B";
-                var download = v.leech !== '' ? humanFileSize(v.leech,true) : "0 B";
-                var upTotal = v.upTotal !== '' ? humanFileSize(v.upTotal,false) : "0 B";
-                var downTotal = v.downTotal !== '' ? humanFileSize(v.downTotal,false) : "0 B";
-                var date = new Date(0);
+
+            array.content.queueItems.forEach(v => {
+                count += 1;
+                const percent = Math.floor((v.downloaded / v.size) * 100);
+                const size = v.size !== -1 ? humanFileSize(v.size, false) : "?";
+                const upload = v.seed !== '' ? humanFileSize(v.seed, true) : "0 B";
+                const download = v.leech !== '' ? humanFileSize(v.leech, true) : "0 B";
+                const upTotal = v.upTotal !== '' ? humanFileSize(v.upTotal, false) : "0 B";
+                const downTotal = v.downTotal !== '' ? humanFileSize(v.downTotal, false) : "0 B";
+                let date = new Date(0);
                 date.setUTCSeconds(v.date);
                 date = moment(date).format('LLL');
                 queue += `
                 <tr>
-                    <td class="max-texts"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="`+date+`">`+v.name+`</span></td>
-                    <td class="hidden-xs rtorrent-`+cleanClass(v.status)+`">`+v.status+`</td>
-                    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="`+downTotal+`"><i class="fa fa-download"></i>&nbsp;`+download+`</span></td>
-                    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="`+upTotal+`"><i class="fa fa-upload"></i>&nbsp;`+upload+`</span></td>
-                    <td class="hidden-xs">`+size+`</td>
-                    <td class="hidden-xs"><span class="label label-info">`+v.label+`</span></td>
+                    <td class="max-texts"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${date}">${v.name}</span></td>
+                    <td class="hidden-xs rtorrent-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${downTotal}"><i class="fa fa-download"></i>&nbsp;${download}</span></td>
+                    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${upTotal}"><i class="fa fa-upload"></i>&nbsp;${upload}</span></td>
+                    <td class="hidden-xs">${size}</td>
+                    <td class="hidden-xs"><span class="label label-info">${v.label}</span></td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+percent+`%;" role="progressbar">`+percent+`%</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
                         </div>
                     </td>
                 </tr>
                 `;
             });
             break;
+
         case 'utorrent':
-            if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
                 break;
             }
-            if(array.content.queueItems == 0){
+
+            const utorrentQueueItems = array.content.queueItems || [];
+        
+            if (utorrentQueueItems.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
+                break;
             }
-            $.each(array.content.queueItems, function(i,v) {
-		count = count + 1;
-                var upload = v.upSpeed !== '' ? humanFileSize(v.upSpeed,false) : "0 B";
-                var download = v.downSpeed !== '' ? humanFileSize(v.downSpeed,false) : "0 B";
-		var size = v.Size !== '' ? humanFileSize(v.Size,false) : "0 B";
+        
+            utorrentQueueItems.forEach(v => {
+                count += 1;
+                const upload = v.upSpeed !== '' ? humanFileSize(v.upSpeed, false) : "0 B";
+                const download = v.downSpeed !== '' ? humanFileSize(v.downSpeed, false) : "0 B";
+                const size = v.Size !== '' ? humanFileSize(v.Size, false) : "0 B";
                 queue += `
                 <tr>
-                    <td class="max-texts"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="">`+v.Name+`</span></td>
-		    <td class="hidden-xs utorrent-`+cleanClass(v.Status)+`">`+v.Status+`</td>
-                    <td class="hidden-xs"><span class="label label-info">`+v.Labels+`</span></td>
-		    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="`+download+`"><i class="fa fa-download"></i>&nbsp;`+download+`</span></td>
-                    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="`+upload+`"><i class="fa fa-upload"></i>&nbsp;`+upload+`</span></td>
-		    <td class="hidden-xs">`+size+`</td>
+                    <td class="max-texts"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="">${v.Name}</span></td>
+                    <td class="hidden-xs utorrent-${cleanClass(v.Status)}">${v.Status}</td>
+                    <td class="hidden-xs"><span class="label label-info">${v.Labels}</span></td>
+                    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${download}"><i class="fa fa-download"></i>&nbsp;${download}</span></td>
+                    <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${upload}"><i class="fa fa-upload"></i>&nbsp;${upload}</span></td>
+                    <td class="hidden-xs">${size}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+v.Percent+`;" role="progressbar">`+v.Percent+`</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${v.Percent}%;" role="progressbar">${v.Percent}</div>
                         </div>
                     </td>
                 </tr>
                 `;
             });
             break;
-		case 'sonarr':
-			if(array.content === false){
-				queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
-				break;
-			}
-			if(array.content.queueItems == 0){
-				queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-				break;
-			}
-			if(array.content.queueItems.records == 0){
-				queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-				break;
-			}
-            let sonarrQueueSet = (typeof array.content.queueItems.records == 'undefined') ? array.content.queueItems : array.content.queueItems.records;
-			$.each(sonarrQueueSet, function(i,v) {
-				count = count + 1;
-				var percent = Math.floor(((v.size - v.sizeleft) / v.size) * 100);
-				percent = (isNaN(percent)) ? '0' : percent;
-				var size = v.size != -1 ? humanFileSize(v.size,false) : "?";
-                v.name = (typeof v.series == 'undefined') ? v.title : v.series.title;
-				queue += `
+
+        case 'sonarr':
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
+                break;
+            }
+        
+            const sonarrQueueItems = array.content.queueItems || [];
+            const sonarrQueueRecords = array.content.queueItems.records || [];
+        
+            if (sonarrQueueItems.length === 0 || sonarrQueueRecords.length === 0) {
+                queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
+                break;
+            }
+        
+            const sonarrQueueSet = sonarrQueueRecords.length ? sonarrQueueRecords : sonarrQueueItems;
+            sonarrQueueSet.forEach(v => {
+                count += 1;
+                const percent = Math.floor(((v.size - v.sizeleft) / v.size) * 100) || 0;
+                const size = v.size !== -1 ? humanFileSize(v.size, false) : "?";
+                v.name = v.series ? v.series.title : v.title;
+                queue += `
                 <tr>
-                    <td class="">`+v.name+`</td>
-                    <td class="">S`+pad(v.episode.seasonNumber,2)+`E`+pad(v.episode.episodeNumber,2)+`</td>
-                    <td class="max-texts">`+v.episode.title+`</td>
-                    <td class="hidden-xs sonarr-`+cleanClass(v.status)+`">`+v.status+`</td>
-                    <td class="hidden-xs">`+size+`</td>
-                    <td class="hidden-xs"><span class="label label-info">`+v.protocol+`</span></td>
+                    <td class="">${v.name}</td>
+                    <td class="">S${pad(v.episode.seasonNumber, 2)}E${pad(v.episode.episodeNumber, 2)}</td>
+                    <td class="max-texts">${v.episode.title}</td>
+                    <td class="hidden-xs sonarr-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs">${size}</td>
+                    <td class="hidden-xs"><span class="label label-info">${v.protocol}</span></td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+percent+`%;" role="progressbar">`+percent+`%</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
                         </div>
                     </td>
                 </tr>
                 `;
-			});
-			break;
-		case 'radarr':
-			if(array.content === false){
-				queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
-				break;
-			}
-			if(array.content.queueItems == 0){
-				queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-				break;
-			}
-			if(array.content.queueItems.records == 0){
-				queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-				break;
-			}
-			let queueSet = (typeof array.content.queueItems.records == 'undefined') ? array.content.queueItems : array.content.queueItems.records;
-			$.each(queueSet, function(i,v) {
-				count = count + 1;
-				var percent = Math.floor(((v.size - v.sizeleft) / v.size) * 100);
-				percent = (isNaN(percent)) ? '0' : percent;
-				var size = v.size != -1 ? humanFileSize(v.size, false) : "?";
-				v.name = (typeof v.movie == 'undefined') ? v.title : v.movie.title;
-				queue += `
+            });
+            break;
+
+        case 'radarr':
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
+                break;
+            }
+
+            const radarrQueueItems = array.content.queueItems || [];
+            const radarrQueueRecords = array.content.queueItems.records || [];
+        
+            if (radarrQueueItems.length === 0 || radarrQueueRecords.length === 0) {
+                queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
+                break;
+            }
+        
+            const radarrQueueSet = radarrQueueRecords.length ? radarrQueueRecords : radarrQueueItems;
+            radarrQueueSet.forEach(v => {
+                count += 1;
+                const percent = Math.floor(((v.size - v.sizeleft) / v.size) * 100) || 0;
+                const size = v.size !== -1 ? humanFileSize(v.size, false) : "?";
+                v.name = v.movie ? v.movie.title : v.title;
+                queue += `
                 <tr>
                     <td class="max-texts">${v.name}</td>
                     <td class="hidden-xs sonarr-${cleanClass(v.status)}">${v.status}</td>
@@ -846,113 +798,97 @@ function buildDownloaderItem(array, source, type='none'){
                     </td>
                 </tr>
                 `;
+            });
+            break;
 
-			});
-			if(queue == ''){
-				queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-			}
-			break;
-		case 'qBittorrent':
-		    if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
+        case 'qBittorrent':
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
                 break;
             }
-            if(array.content.queueItems == 0){
+
+            if (array.content.queueItems.length === 0) {
                 queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
             }
-            $.each(array.content.queueItems, function(i,v) {
-                count = count + 1;
-                switch (v.state) {
-                    case 'stalledDL':
-                        var status = 'No Peers';
-                        break;
-                    case 'metaDL':
-                        var status = 'Getting Metadata';
-                        break;
-                    case 'uploading':
-                        var status = 'Seeding';
-                        break;
-                    case 'queuedUP':
-                        var status = 'Seeding Queued';
-                        break;
-                    case 'downloading':
-                        var status = 'Downloading';
-                        break;
-                    case 'queuedDL':
-                        var status = 'Queued';
-                        break;
-                    case 'checkingDL':
-                    case 'checkingUP':
-                        var status = 'Checking Files';
-                        break;
-                    case 'pausedDL':
-                        var status = 'Paused';
-                        break;
-                    case 'pausedUP':
-                        var status = 'Complete';
-                        break;
-                    default:
-                        var status = 'Complete';
+
+            array.content.queueItems.forEach(v => {
+                count += 1;
+                const statusMap = {
+                    stalledDL: 'No Peers',
+                    metaDL: 'Getting Metadata',
+                    uploading: 'Seeding',
+                    queuedUP: 'Seeding Queued',
+                    downloading: 'Downloading',
+                    queuedDL: 'Queued',
+                    checkingDL: 'Checking Files',
+                    checkingUP: 'Checking Files',
+                    pausedDL: 'Paused',
+                    pausedUP: 'Complete'
+                };
+                const status = statusMap[v.state] || 'Complete';
+                const percent = Math.floor(v.progress * 100);
+                const size = v.total_size !== -1 ? humanFileSize(v.total_size, true) : "?";
+                queue += `
+                <tr>
+                    <td class="max-texts">${v.name}</td>
+                    <td class="hidden-xs qbit-${cleanClass(status)}">${status}</td>
+                    <td class="hidden-xs">${v.save_path}</td>
+                    <td class="hidden-xs">${size}</td>
+                    <td class="text-right">
+                        <div class="progress progress-lg m-b-0">
+                            <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            });
+            break;
+
+        case 'deluge':
+            if (array.content === false) {
+                queue = `<tr><td class="max-texts" lang="en">Connection Error to ${source}</td></tr>`;
+                break;
+            }
+
+            if (array.content.queueItems.length === 0) {
+                queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
+            }
+
+            array.content.queueItems.forEach(v => {
+                count += 1;
+                const percent = Math.floor(v.progress);
+                const size = v.total_size !== -1 ? humanFileSize(v.total_size, true) : "?";
+                const upload = v.upload_payload_rate !== -1 ? humanFileSize(v.upload_payload_rate, true) : "?";
+                const download = v.download_payload_rate !== -1 ? humanFileSize(v.download_payload_rate, true) : "?";
+                queue += `
+                <tr>
+                    <td class="max-texts">${v.name}`;
+                if (v.tracker_status !== "") {
+                    queue += `<i class="fa fa-caret-down ml-2" style="cursor:pointer" onclick="$(this).toggleClass('fa-caret-down');$(this).toggleClass('fa-caret-up');$('#status-${v.hash}').toggleClass('d-none');" aria-hidden="true"></i><br /><div class="well mb-0 mt-2 p-3 d-none" id="status-${v.hash}">${v.tracker_status}</div>`;
                 }
-                var percent = Math.floor(v.progress * 100);
-                var size = v.total_size != -1 ? humanFileSize(v.total_size,true) : "?";
-                queue += `
-                <tr>
-                    <td class="max-texts">`+v.name+`</td>
-                    <td class="hidden-xs qbit-`+cleanClass(status)+`">`+status+`</td>
-                    <td class="hidden-xs">`+v.save_path+`</td>
-                    <td class="hidden-xs">`+size+`</td>
+                queue += `</td>
+                    <td class="hidden-xs deluge-${cleanClass(v.state)}">${v.state}</td>
+                    <td class="hidden-xs">${size}</td>
+                    <td class="hidden-xs"><i class="fa fa-download"></i>&nbsp;${download}</td>
+                    <td class="hidden-xs"><i class="fa fa-upload"></i>&nbsp;${upload}</td>
                     <td class="text-right">
                         <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+percent+`%;" role="progressbar">`+percent+`%</div>
+                            <div class="progress-bar progress-bar-info" style="width: ${percent}%;" role="progressbar">${percent}%</div>
                         </div>
                     </td>
                 </tr>
                 `;
             });
-			break;
-		case 'deluge':
-            if(array.content === false){
-                queue = '<tr><td class="max-texts" lang="en">Connection Error to ' + source + '</td></tr>';
-                break;
-            }
-            if(array.content.queueItems.length == 0){
-                queue = '<tr><td class="max-texts" lang="en">Nothing in queue</td></tr>';
-            }
-            $.each(array.content.queueItems, function(i,v) {
-                count = count + 1;
-                var percent = Math.floor(v.progress);
-                var size = v.total_size != -1 ? humanFileSize(v.total_size,true) : "?";
-                var upload = v.upload_payload_rate != -1 ? humanFileSize(v.upload_payload_rate,true) : "?";
-                var download = v.download_payload_rate != -1 ? humanFileSize(v.download_payload_rate,true) : "?";
-                var action = (v.Status == "Downloading") ? 'pause' : 'resume';
-                var actionIcon = (v.Status == "Downloading") ? 'pause' : 'play';
-                queue += `
-                <tr>
-                    <td class="max-texts">`+v.name;
-		    if (v.tracker_status != "") queue += `<i class="fa fa-caret-down ml-2" style="cursor:pointer" onclick="$(this).toggleClass('fa-caret-down');$(this).toggleClass('fa-caret-up');$('#status-`+v.hash+`').toggleClass('d-none');" aria-hidden="true"></i><br /><div class="well mb-0 mt-2 p-3 d-none" id="status-`+v.hash+`">`+v.tracker_status+`</div>`;
-		    queue +=`</td>
-                    <td class="hidden-xs deluge-`+cleanClass(v.state)+`">`+v.state+`</td>
-                    <td class="hidden-xs">`+size+`</td>
-                    <td class="hidden-xs"><i class="fa fa-download"></i>&nbsp;`+download+`</td>
-                    <td class="hidden-xs"><i class="fa fa-upload"></i>&nbsp;`+upload+`</td>
-                    <td class="text-right">
-                        <div class="progress progress-lg m-b-0">
-                            <div class="progress-bar progress-bar-info" style="width: `+percent+`%;" role="progressbar">`+percent+`%</div>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
-			break;
-		default:
-			return false;
-	}
-    if(queue !== ''){
-        $('.'+source+'-queue').html(queue);
+            break;
+
+        default:
+            return false;
     }
-    if(history !== ''){
-        $('.'+source+'-history').html(history);
+    if (queue !== '') {
+        $(`.${source}-queue`).html(queue);
     }
-    $('#count-'+source).html(count);
+    if (history !== '') {
+        $(`.${source}-history`).html(history);
+    }
+    $(`#count-${source}`).html(count);
 }
