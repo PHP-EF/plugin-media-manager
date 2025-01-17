@@ -29,7 +29,7 @@ class DownloadQueueWidget implements WidgetInterface {
     }
 
     public function render() {
-        $Config = $this->phpef->config->get('Widgets','uTorrent Queue') ?? [];
+        $Config = $this->phpef->config->get('Widgets','Download Queues') ?? [];
         $Auth = $Config['auth'] ?? null;
         $Enabled = $Config['enabled'] ?? false;
         if ($this->phpef->auth->checkAccess($Auth) !== false && $Enabled) {
@@ -48,4 +48,4 @@ class DownloadQueueWidget implements WidgetInterface {
 }
 
 // Register Custom HTML Widgets
-$phpef->dashboard->registerWidget('uTorrent Queue', new DownloadQueueWidget($phpef));
+$phpef->dashboard->registerWidget('Download Queues', new DownloadQueueWidget($phpef));
