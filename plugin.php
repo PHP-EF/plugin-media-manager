@@ -26,6 +26,11 @@ foreach (glob(__DIR__.'/functions/*.php') as $function) {
     require_once $function; // Include each PHP file
 }
 
+// Include MediaManager Widgets
+foreach (glob(__DIR__.'/widgets/*.php') as $widget) {
+    require_once $widget; // Include each PHP file
+}
+
 class MediaManager extends phpef {
     use General,
     Database,
@@ -33,6 +38,7 @@ class MediaManager extends phpef {
     Tautulli,
     Sonarr,
     Radarr,
+    uTorrent,
     SSO;
 
     private $pluginConfig;
@@ -207,6 +213,18 @@ class MediaManager extends phpef {
                 $this->settingsOption('url', 'overseerrUrl', ['label' => 'Overseerr API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password', 'overseerrApiKey', ['label' => 'Overseerr API Key', 'placeholder' => 'Your API Key']),
                 $this->settingsOption('checkbox', 'overseerrEnableSSO', ['label' => 'Enable Overseerr SSO'])
+            ),
+            'uTorrent' => array(
+                $this->settingsOption('url', 'uTorrentUrl', ['label' => 'uTorrent API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('test', '/api/mediamanager/utorrent/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET']),
+                $this->settingsOption('username', 'uTorrentUsername', ['label' => 'uTorrent Username']),
+                $this->settingsOption('password', 'uTorrentPassword', ['label' => 'uTorrent Password'])
+            ),
+            'NzbGet' => array(
+                $this->settingsOption('url', 'nzbgetURL', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('test', '/api/mediamanager/nzbget/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET']),
+                $this->settingsOption('username', 'nzbgetUsername', ['label' => 'NzbGet Username']),
+                $this->settingsOption('password', 'nzbgetPassword'),
             ),
             'Cron Jobs' => array(
                 $this->settingsOption('title', 'sonarrSectionTitle', ['text' => 'Sonarr & Tautulli Synchronisation']),

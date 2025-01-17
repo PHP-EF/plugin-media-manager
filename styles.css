@@ -1,15 +1,11 @@
-.input-group {
-    margin-bottom: 10px;
+.downloaderCount {
+    border-radius: 10px;
+    padding: 3px 5px;
+    font-size: 12px;
+    margin-top: -15px;
+    margin-left: -45px;
+    position: absolute;
 }
-
-.input-group .btn-danger {
-    margin-left: 10px;
-}
-
-#logPaths, #fileExtensions {
-    margin-bottom: 15px;
-}
-
-.progress {
-    height: 1.4rem;
+.listingMain {
+    padding: 0px 0px;
 }
