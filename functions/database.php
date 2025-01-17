@@ -146,7 +146,7 @@ trait Database {
                     if ($cleanupEnabled) {
                         // Exclude shows with exclusion tag
                         $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'] ?? null;
-                        $tags = explode(',', $show['tags']);
+                        $tags = $show['tags'];
                         if (!in_array($exclusionTag, $tags)) {
                             try {
                                 // Default to false
@@ -334,8 +334,7 @@ trait Database {
                     if ($cleanupEnabled) {
                         // Exclude shows with exclusion tag
                         $exclusionTag = $this->pluginConfig['radarrCleanupExclusionTag'] ?? null;
-                        $tags = explode(',', $Movie['tags']);
-                        if (!in_array($exclusionTag, $tags)) {
+                        if (!in_array($exclusionTag, $Movie['tags'])) {
                             try {
                                 // Default to false
                                 $Movie['clean'] = false;
