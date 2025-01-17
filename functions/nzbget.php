@@ -1,5 +1,9 @@
 <?php
 trait NzbGet {
+    public function testConnectionNzbGet() {
+        $this->getNzbgetQueue() ? $this->api->setAPIResponseMessage('NzbGet API Test Successful') : $this->api->setAPIResponse('Error','NzbGet API Test Failed');
+    }
+
 	public function getNzbgetQueue() {
         $url = $this->pluginConfig['nzbgetURL'];
         $urlGroups = $url . '/jsonrpc/listgroups';

@@ -16,7 +16,7 @@ trait qBittorrent {
                 $response = $this->api->query->get($url,$HeadersArr);
 				if ($response) {
 					if (is_array($response)) {
-						$this->api->setAPIResponseMessage('API Connection succeeded');
+						$this->api->setAPIResponseMessage('qBittorrent API Test Successful');
 						return true;
 					} else {
 						$this->api->setAPIResponse('Error', 'qBittorrent Error Occurred - Check URL or Credentials');
