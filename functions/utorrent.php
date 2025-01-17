@@ -3,7 +3,7 @@ trait uTorrent {
 
     public function testConnectionuTorrent()
 	{
-		if (empty($this->pluginConfig['uTorrentUrl'])) {
+		if (empty($this->pluginConfig['utorrentUrl'])) {
 			$this->api->setAPIResponse('error', 'uTorrent URL is not defined');
 			return false;
 		}
@@ -20,10 +20,10 @@ trait uTorrent {
 	{
 		try {
 			$tokenUrl = '/gui/token.html';
-			$url = $this->pluginConfig['uTorrentUrl'] . $tokenUrl;
-			$data = array('username' => $this->pluginConfig['uTorrentUsername'], 'password' => decrypt($this->pluginConfig['uTorrentPassword']));
-			if ($this->pluginConfig['uTorrentUsername'] !== '' && decrypt($this->pluginConfig['uTorrentPassword']) !== '') {
-				$options = array('auth' => new Requests_Auth_Basic(array($this->pluginConfig['uTorrentUsername'], decrypt($this->pluginConfig['uTorrentPassword']))));
+			$url = $this->pluginConfig['utorrentUrl'] . $tokenUrl;
+			$data = array('username' => $this->pluginConfig['utorrentUsername'], 'password' => decrypt($this->pluginConfig['utorrentPassword']));
+			if ($this->pluginConfig['utorrentUsername'] !== '' && decrypt($this->pluginConfig['utorrentPassword']) !== '') {
+				$options = array('auth' => new Requests_Auth_Basic(array($this->pluginConfig['utorrentUsername'], decrypt($this->pluginConfig['utorrentPassword']))));
 			}
             $response = $this->api->query->post($url,$data,null,$options);
             $config = $this->config->get();
@@ -58,17 +58,17 @@ trait uTorrent {
     public function getuTorrentQueue()
 	{
 		try {
-			if (!$this->pluginConfig['uTorrentToken'] || !$this->pluginConfig['uTorrentCookie']) {
+			if (!$this->pluginConfig['utorrentToken'] || !$this->pluginConfig['utorrentCookie']) {
 				$this->getuTorrentToken();
 			}
-			$queryUrl = '/gui/?token=' . $this->pluginConfig['uTorrentToken'] . '&list=1';
-			$url = $this->pluginConfig['uTorrentUrl'] . $queryUrl;
+			$queryUrl = '/gui/?token=' . $this->pluginConfig['utorrentToken'] . '&list=1';
+			$url = $this->pluginConfig['utorrentUrl'] . $queryUrl;
             // Why do I need to pass basic auth when I already generated a token?
-			if ($this->pluginConfig['uTorrentUsername'] !== '' && decrypt($this->pluginConfig['uTorrentPassword']) !== '') {
-				$options = array('auth' => new Requests_Auth_Basic(array($this->pluginConfig['uTorrentUsername'], decrypt($this->pluginConfig['uTorrentPassword']))));
+			if ($this->pluginConfig['utorrentUsername'] !== '' && decrypt($this->pluginConfig['utorrentPassword']) !== '') {
+				$options = array('auth' => new Requests_Auth_Basic(array($this->pluginConfig['utorrentUsername'], decrypt($this->pluginConfig['utorrentPassword']))));
 			}
 			$headers = array(
-				'Cookie' => 'GUID=' . $this->pluginConfig['uTorrentCookie']
+				'Cookie' => 'GUID=' . $this->pluginConfig['utorrentCookie']
 			);
 			$response = $this->api->query->get($url, $headers, $options, true);
 			$httpResponse = $response->status_code;
@@ -83,12 +83,15 @@ trait uTorrent {
 				$keyArray = (array)$responseData->torrents;
 				//Populate values
 				$valueArray = array();
+                $downloadWidgetConfig = $this->config->get('Widgets','Download Queues') ?? [];
+                $utorrentHideSeeding = $downloadWidgetConfig['utorrentHideSeeding'] ?? false;
+                $utorrentHideCompleted = $downloadWidgetConfig['utorrentHideCompleted'] ?? false;
 				foreach ($keyArray as $keyArr) {
 					preg_match('/(?<Status>(\w+\s+)+)(?<Percentage>\d+.\d+.*)/', $keyArr[21], $matches);
 					$Status = str_replace(' ', '', $matches['Status']);
-					if ($this->pluginConfig['uTorrentHideSeeding'] && $Status == "Seeding") {
+					if ($utorrentHideSeeding && $Status == "Seeding") {
 						// Do Nothing
-					} else if ($this->pluginConfig['uTorrentHideCompleted'] && $Status == "Finished") {
+					} else if ($utorrentHideCompleted && $Status == "Finished") {
 						// Do Nothing
 					} else {
 						$value = array(

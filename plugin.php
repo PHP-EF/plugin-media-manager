@@ -39,6 +39,7 @@ class MediaManager extends phpef {
     Sonarr,
     Radarr,
     uTorrent,
+    NzbGet,
     SSO;
 
     private $pluginConfig;
@@ -215,10 +216,10 @@ class MediaManager extends phpef {
                 $this->settingsOption('checkbox', 'overseerrEnableSSO', ['label' => 'Enable Overseerr SSO'])
             ),
             'uTorrent' => array(
-                $this->settingsOption('url', 'uTorrentUrl', ['label' => 'uTorrent API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('url', 'utorrentUrl', ['label' => 'uTorrent API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('test', '/api/mediamanager/utorrent/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET']),
-                $this->settingsOption('username', 'uTorrentUsername', ['label' => 'uTorrent Username']),
-                $this->settingsOption('password', 'uTorrentPassword', ['label' => 'uTorrent Password'])
+                $this->settingsOption('username', 'utorrentUsername', ['label' => 'uTorrent Username']),
+                $this->settingsOption('password', 'utorrentPassword', ['label' => 'uTorrent Password'])
             ),
             'NzbGet' => array(
                 $this->settingsOption('url', 'nzbgetURL', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),

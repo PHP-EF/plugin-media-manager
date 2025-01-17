@@ -95,6 +95,35 @@ trait Sonarr {
         }
     }
 
+	public function getSonarrQueue() {
+		$queueItems = array();
+        try {
+            $Params = array(
+                "includeSeries" => "true",
+                "includeEpisode" => "true"
+            );
+            $downloadList = $this->querySonarrAPI('GET','queue',null,$Params);
+            if (is_array($downloadList) || is_object($downloadList)) {
+                $queue = (array_key_exists('error', $downloadList)) ? [] : $downloadList;
+                $queue = $queue['records'] ?? $queue;
+            } else {
+                $queue = [];
+            }
+            if (!empty($queue)) {
+                $queueItems = array_merge($queueItems, $queue);
+            }
+        } catch (Exception $e) {
+            $this->logging->writeLog('Sonarr',$e,'error');
+            $this->api->setAPIResponse('Error',$e->getMessage());
+            return false;
+        }
+		$api['content']['queueItems'] = $queueItems;
+		$api['content']['historyItems'] = false;
+		$api['content'] = $api['content'] ?? false;
+        $this->api->setAPIResponseData($api);
+        return $api;
+	}
+
     // **
     // MATCH TAUTULLI -> SONARR
     // **

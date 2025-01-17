@@ -48,6 +48,34 @@ trait Radarr {
         }
     }
 
+	public function getRadarrQueue() {
+		$queueItems = array();
+        try {
+            $Params = array(
+
+            );
+            $downloadList = $this->queryRadarrAPI('GET','queue',null,$Params);
+            if (is_array($downloadList) || is_object($downloadList)) {
+                $queue = (array_key_exists('error', $downloadList)) ? [] : $downloadList;
+                $queue = $queue['records'] ?? $queue;
+            } else {
+                $queue = [];
+            }
+            if (!empty($queue)) {
+                $queueItems = array_merge($queueItems, $queue);
+            }
+        } catch (Exception $e) {
+            $this->logging->writeLog('Radarr',$e,'error');
+            $this->api->setAPIResponse('Error',$e->getMessage());
+            return false;
+        }
+		$api['content']['queueItems'] = $queueItems;
+		$api['content']['historyItems'] = false;
+		$api['content'] = $api['content'] ?? false;
+        $this->api->setAPIResponseData($api);
+        return $api;
+	}
+
     // **
     // MATCH TAUTULLI -> RADARR
     // **
