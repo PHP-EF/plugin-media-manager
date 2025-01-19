@@ -5,7 +5,7 @@ trait NzbGet {
     }
 
 	public function getNzbgetQueue() {
-        $url = $this->pluginConfig['nzbgetURL'];
+        $url = $this->pluginConfig['nzbgetUrl'];
         $urlGroups = $url . '/jsonrpc/listgroups';
         $urlHistory = $url . '/jsonrpc/history';
 		try {

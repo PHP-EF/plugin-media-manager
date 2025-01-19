@@ -231,13 +231,13 @@ class MediaManager extends phpef {
                 $this->settingsOption('select', 'qbittorrentApiVersion', ['label' => 'qBittorrent API Version', 'options' => array(array("name" => 'v2', "value" => '2'),array("name" => 'v1', "value" => '1'), 'value' => '2')]),
             ),
             'NzbGet' => array(
-                $this->settingsOption('url', 'nzbgetURL', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('url', 'nzbgetUrl', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('test', '/api/mediamanager/nzbget/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET']),
                 $this->settingsOption('username', 'nzbgetUsername', ['label' => 'NzbGet Username']),
                 $this->settingsOption('password', 'nzbgetPassword'),
             ),
             'Sabnzbd' => array(
-                $this->settingsOption('url', 'sabnzbdURL', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('url', 'sabnzbdUrl', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password', 'sabnzbdToken', ['label' => 'Sabnzbd Token', 'placeholder' => 'Your Sabnzbd Token']),
                 $this->settingsOption('test', '/api/mediamanager/sabnzbd/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET'])
             ),

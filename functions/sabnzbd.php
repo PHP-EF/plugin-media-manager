@@ -5,7 +5,7 @@ trait Sabnzbd {
     }
 
 	public function getSabnzbdQueue() {
-        $sabnzbdUrl = $this->pluginConfig['sabnzbdURL'];
+        $sabnzbdUrl = $this->pluginConfig['sabnzbdUrl'];
 		try {
     		if ($this->pluginConfig['sabnzbdUrl'] !== '' && decrypt($this->pluginConfig['sabnzbdToken']) !== '') {
 				$url = $sabnzbdUrl . '/api?mode=queue&output=json&apikey=' . decrypt($this->pluginConfig['sabnzbdToken']);
