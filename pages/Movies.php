@@ -11,7 +11,7 @@ return '
         <!-- Movies Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
             <div class="card info-card movies-card">
-                <div class="card-body info-box bg-info">
+                <div class="card-body metric-box bg-info">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                             <i class="fas fa-tv mb-2"></i>&nbsp;
@@ -27,7 +27,7 @@ return '
         <!-- Recently Watched Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
             <div class="card info-card movies-card">
-                <div class="card-body info-box bg-success">
+                <div class="card-body metric-box bg-success">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                             <i class="fas fa-check mb-2"></i>&nbsp;
@@ -43,7 +43,7 @@ return '
         <!-- Cleanup Pending Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
             <div class="card info-card movies-card">
-                <div class="card-body info-box bg-warning">
+                <div class="card-body metric-box bg-warning">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                             <i class="fas fa-clock mb-2"></i>&nbsp;
@@ -59,7 +59,7 @@ return '
         <!-- Space To Free Card -->
         <div class="col-lg-3 col-md-4 col-sm-6 col-12">
             <div class="card info-card movies-card">
-                <div class="card-body info-box bg-danger">
+                <div class="card-body metric-box bg-danger">
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                             <i class="fas fa-trash mb-2"></i>&nbsp;
