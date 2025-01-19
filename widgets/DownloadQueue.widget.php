@@ -100,7 +100,7 @@ class DownloadQueueWidget implements WidgetInterface {
             $scripts = implode("\n", $scripts);
     
             return <<<EOF
-                <div class="card pt-3">
+                <div class="card card-rounded pt-3">
                     <div id="homepageOrderdownloader">
                         <script>
                             appendScript({ src: "/api/page/plugin/Media Manager/js" })
