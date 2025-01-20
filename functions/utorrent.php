@@ -44,8 +44,7 @@ trait uTorrent {
 				$uTorrentConfig['utorrentCookie'] = $cookie['GUID']->value;
 			}
 			if ($uTorrentConfig['utorrentToken'] || $uTorrentConfig['utorrentCookie']) {
-                $config = $this->config->get();
-                $this->config->setPlugin($config, $uTorrentConfig, 'Media Manager');
+                $this->config->setPlugin($uTorrentConfig, 'Media Manager');
 			}
             $this->api->setAPIResponseMessage('Successfully retrieved token');
 		} catch (Requests_Exception $e) {

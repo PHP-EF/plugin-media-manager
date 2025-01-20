@@ -54,11 +54,10 @@ trait qBittorrent {
                 $cookie->setAccessible(true);
                 $cookie = $cookie->getValue($response->cookies);
                 $cookieVal = $cookie['SID']->value;
-                $config = $this->config->get();
                 $qbittorrentConfig = array(
                     'qbittorrentCookie' => $cookieVal
                 );
-                $this->config->setPlugin($config, $qbittorrentConfig, 'Media Manager');
+                $this->config->setPlugin($qbittorrentConfig, 'Media Manager');
             } else {
                 $cookieVal = $qbittorrentCookie;
             }
