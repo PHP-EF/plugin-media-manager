@@ -145,8 +145,8 @@ trait Database {
                     $cleanupEnabled = $this->pluginConfig['sonarrCleanupEnabled'] ?? false;
                     if ($cleanupEnabled) {
                         // Exclude shows with exclusion tag
-                        $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'] ?? null;
-                        $tags = $show['tags'];
+                        $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'] ?? [];
+                        $tags = $show['tags'] ?? [];
                         if (!in_array($exclusionTag, $tags)) {
                             try {
                                 // Default to false
@@ -333,8 +333,8 @@ trait Database {
                     $cleanupEnabled = $this->pluginConfig['radarrCleanupEnabled'] ?? false;
                     if ($cleanupEnabled) {
                         // Exclude shows with exclusion tag
-                        $exclusionTag = $this->pluginConfig['radarrCleanupExclusionTag'] ?? null;
-                        if (!in_array($exclusionTag, $Movie['tags'])) {
+                        $exclusionTag = $this->pluginConfig['radarrCleanupExclusionTag'] ?? [];
+                        if (!in_array($exclusionTag, $Movie['tags'] ?? [])) {
                             try {
                                 // Default to false
                                 $Movie['clean'] = false;
