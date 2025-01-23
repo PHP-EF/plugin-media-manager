@@ -12,7 +12,8 @@ $app->get('/mediamanager/nzbget/test', function($request, $response, $args) {
 
 $app->get('/mediamanager/nzbget/queue', function($request, $response, $args) {
     $MediaManager = new MediaManager();
-    if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
+    $DownloadQueueWidget = new DownloadQueueWidget($MediaManager);
+    if ($MediaManager->auth->checkAccess($DownloadQueueWidget->widgetConfig['auth'] ?? null)) {
         $MediaManager->api->setAPIResponseData($MediaManager->getNzbgetQueue());
     }
     $response->getBody()->write(json_encode($GLOBALS['api']));
