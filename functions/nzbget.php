@@ -11,7 +11,7 @@ trait NzbGet {
 		try {
             $options = array();
     		if ($this->pluginConfig['nzbgetUsername'] !== '' && decrypt($this->pluginConfig['nzbgetPassword']) !== '') {
-				$options = array('auth' => new Requests_Auth_Basic(array($this->pluginConfig['nzbgetUsername'], decrypt($this->pluginConfig['nzbgetPassword']))));
+				$options = array('auth' => new WpOrg\Requests\Auth\Basic(array($this->pluginConfig['nzbgetUsername'], decrypt($this->pluginConfig['nzbgetPassword']))));
 			}
             $response = $this->api->query->get($urlGroups, null, $options, true);
 			if ($response->success) {

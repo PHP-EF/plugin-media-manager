@@ -23,7 +23,7 @@ trait uTorrent {
 			$url = $this->pluginConfig['utorrentUrl'] . $tokenUrl;
 			$data = array('username' => $this->pluginConfig['utorrentUsername'], 'password' => decrypt($this->pluginConfig['utorrentPassword']));
 			if ($this->pluginConfig['utorrentUsername'] !== '' && decrypt($this->pluginConfig['utorrentPassword']) !== '') {
-				$options = array('auth' => new Requests_Auth_Basic(array($this->pluginConfig['utorrentUsername'], decrypt($this->pluginConfig['utorrentPassword']))));
+				$options = array('auth' => new WpOrg\Requests\Auth\Basic(array($this->pluginConfig['utorrentUsername'], decrypt($this->pluginConfig['utorrentPassword']))));
 			}
             $response = $this->api->query->post($url,$data,null,$options);
             $config = $this->config->get();
@@ -64,7 +64,7 @@ trait uTorrent {
 			$url = $this->pluginConfig['utorrentUrl'] . $queryUrl;
             // Why do I need to pass basic auth when I already generated a token?
 			if ($this->pluginConfig['utorrentUsername'] !== '' && decrypt($this->pluginConfig['utorrentPassword']) !== '') {
-				$options = array('auth' => new Requests_Auth_Basic(array($this->pluginConfig['utorrentUsername'], decrypt($this->pluginConfig['utorrentPassword']))));
+				$options = array('auth' => new WpOrg\Requests\Auth\Basic(array($this->pluginConfig['utorrentUsername'], decrypt($this->pluginConfig['utorrentPassword']))));
 			}
 			$headers = array(
 				'Cookie' => 'GUID=' . $this->pluginConfig['utorrentCookie']

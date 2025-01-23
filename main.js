@@ -362,7 +362,7 @@ function buildDownloaderCombined(source) {
 
     if (queue) {
         menu += `
-            <li role="presentation" class="active" onclick="homepageDownloader('${source}')"><a href="#${source}-queue" aria-controls="home" role="tab" data-bs-toggle="tab" aria-expanded="true"><span class="visible-xs"><i class="ti-download"></i></span><span class="hidden-xs">${queueButton}</span></a></li>
+            <li role="presentation" class="active" onclick="homepageDownloader('${source}')"><a href="#${source}-queue" aria-controls="home" role="tab" data-bs-toggle="tab" aria-expanded="true" class="active"><span class="visible-xs"><i class="ti-download"></i></span><span class="hidden-xs">${queueButton}</span></a></li>
         `;
         listing += `
             <div role="tabpanel" class="tab-pane fade active in show" id="${source}-queue">
