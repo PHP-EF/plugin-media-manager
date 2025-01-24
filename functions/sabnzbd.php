@@ -41,6 +41,7 @@ trait Sabnzbd {
 					return false;
 				}
 				$this->api->setAPIResponseData($api);
+				return $api;
 			} else {
 				$this->logging->writeLog('Sabnzbd','URL and/or Token not setup','error');
 				$this->setAPIResponse('Error', 'URL and/or Token not setup');

@@ -14,7 +14,7 @@ $app->get('/mediamanager/qbittorrent/queue', function($request, $response, $args
     $MediaManager = new MediaManager();
     $DownloadQueueWidget = new DownloadQueueWidget($MediaManager);
     if ($MediaManager->auth->checkAccess($DownloadQueueWidget->widgetConfig['auth'] ?? null)) {
-        $MediaManager->api->setAPIResponseData($MediaManager->getqBittorrentQueue());
+        $MediaManager->getqBittorrentQueue();
     }
     $response->getBody()->write(json_encode($GLOBALS['api']));
     return $response
