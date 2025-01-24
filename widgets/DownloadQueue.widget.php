@@ -20,7 +20,9 @@ class DownloadQueueWidget implements WidgetInterface {
         $SettingsArr['Settings'] = [
             'Widget Settings' => [
 				$this->phpef->settingsOption('enable', 'enabled'),
-				$this->phpef->settingsOption('auth', 'auth', ['label' => 'Role Required'])
+				$this->phpef->settingsOption('auth', 'auth', ['label' => 'Role Required']),
+                $this->phpef->settingsOption('checkbox', 'headerEnabled', ['label' => 'Enable Header', 'attr' => 'checked']),
+                $this->phpef->settingsOption('input', 'header', ['label' => 'Header Title', 'placeholder' => 'Download Queues']),
             ],
             'uTorrent' => [
 				$this->phpef->settingsOption('enable', 'utorrentEnabled'),
@@ -75,6 +77,8 @@ class DownloadQueueWidget implements WidgetInterface {
         $WidgetConfig['sonarrRefresh'] = $WidgetConfig['sonarrRefresh'] ?? 60000;
         $WidgetConfig['radarrEnabled'] = $WidgetConfig['radarrEnabled'] ?? false;
         $WidgetConfig['radarrRefresh'] = $WidgetConfig['radarrRefresh'] ?? 60000;
+        $WidgetConfig['headerEnabled'] = $this->widgetConfig['headerEnabled'] ?? true;
+        $WidgetConfig['header'] = $this->widgetConfig['header'] ?? 'Download Queues';
         return $WidgetConfig;
     }
 
@@ -98,8 +102,20 @@ class DownloadQueueWidget implements WidgetInterface {
             }
     
             $scripts = implode("\n", $scripts);
-    
-            return <<<EOF
+            $output = '';
+            if ($this->widgetConfig['headerEnabled']) {
+                $QueueHeader = $this->widgetConfig['header'];
+                $output = <<<EOF
+                <div class="col-md-12 homepage-item-collapse" data-bs-toggle="collapse" href="#downloadQueues-collapse" data-bs-parent="#downloadQueues" aria-expanded="true" aria-controls="downloadQueues-collapse">
+                    <h4 class="float-left homepage-item-title"><span lang="en">$QueueHeader</span></h4>
+                    <h4 class="float-left">&nbsp;</h4>
+                    <hr class="hr-alt ml-2">
+                </div>
+                <div class="panel-collapse collapse show" id="downloadQueues-collapse" aria-labelledby="downloadQueues-heading" role="tabpanel" aria-expanded="true" style="">
+                EOF;
+            }
+
+            $output .= <<<EOF
                 <div class="card card-rounded pt-3">
                     <div id="homepageOrderdownloader">
                         <script>
@@ -113,6 +129,8 @@ class DownloadQueueWidget implements WidgetInterface {
                     <link href="/api/page/plugin/Media Manager/css" rel="stylesheet">
                 </div>
             EOF;
+
+            return $output;
         }
     }
 }
