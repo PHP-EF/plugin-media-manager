@@ -2,7 +2,7 @@
 // Define Custom HTML Widgets
 class DownloadQueueWidget implements WidgetInterface {
     private $phpef;
-    private $widgetConfig;
+    public $widgetConfig;
 
     public function __construct($phpef) {
         $this->phpef = $phpef;
@@ -60,7 +60,7 @@ class DownloadQueueWidget implements WidgetInterface {
     private function getWidgetConfig() {
         $WidgetConfig = $this->phpef->config->get('Widgets','Download Queues') ?? [];
         $WidgetConfig['enabled'] = $WidgetConfig['enabled'] ?? false;
-        $WidgetConfig['auth'] = $WidgetConfig['auth'] ?? false;
+        $WidgetConfig['auth'] = $WidgetConfig['auth'] ?? 'ACL-MEDIAMANAGER';
         $WidgetConfig['utorrentEnabled'] = $WidgetConfig['utorrentEnabled'] ?? false;
         $WidgetConfig['utorrentHideSeeding'] = $WidgetConfig['utorrentHideSeeding'] ?? false;
         $WidgetConfig['utorrentHideCompleted'] = $WidgetConfig['utorrentHideCompleted'] ?? false;
