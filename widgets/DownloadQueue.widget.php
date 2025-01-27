@@ -28,30 +28,30 @@ class DownloadQueueWidget implements WidgetInterface {
 				$this->phpef->settingsOption('enable', 'utorrentEnabled'),
                 $this->phpef->settingsOption('checkbox', 'utorrentHideSeeding', ['label' => 'Hide Seeding']),
                 $this->phpef->settingsOption('checkbox', 'utorrentHideCompleted', ['label' => 'Hide Completed']),
-                $this->phpef->settingsOption('refresh', 'utorrentRefresh')
+                $this->phpef->settingsOption('refresh', 'utorrentRefresh', ['value' => '60000'])
             ],
             'qBittorrent' => [
 				$this->phpef->settingsOption('enable', 'qbittorrentEnabled'),
                 $this->phpef->settingsOption('checkbox', 'qbittorrentSeeding', ['label' => 'Hide Seeding']),
                 $this->phpef->settingsOption('checkbox', 'qbittorrentCompleted', ['label' => 'Hide Completed']),
                 $this->phpef->settingsOption('checkbox', 'qbittorrentReverseSorting', ['label' => 'Reverse Sort Order']),
-                $this->phpef->settingsOption('refresh', 'qbittorrentRefresh')
+                $this->phpef->settingsOption('refresh', 'qbittorrentRefresh', ['value' => '60000'])
             ],
             'NzbGet' => [
 				$this->phpef->settingsOption('enable', 'nzbgetEnabled'),
-                $this->phpef->settingsOption('refresh', 'nzbgetRefresh')
+                $this->phpef->settingsOption('refresh', 'nzbgetRefresh', ['value' => '60000'])
             ],
             'Sabnzbd' => [
 				$this->phpef->settingsOption('enable', 'sabnzbdEnabled'),
-                $this->phpef->settingsOption('refresh', 'sabnzbdRefresh')
+                $this->phpef->settingsOption('refresh', 'sabnzbdRefresh', ['value' => '60000'])
             ],
             'Sonarr' => [
 				$this->phpef->settingsOption('enable', 'sonarrEnabled'),
-                $this->phpef->settingsOption('refresh', 'sonarrRefresh')
+                $this->phpef->settingsOption('refresh', 'sonarrRefresh', ['value' => '60000'])
             ],
             'Radarr' => [
 				$this->phpef->settingsOption('enable', 'radarrEnabled'),
-                $this->phpef->settingsOption('refresh', 'radarrRefresh')
+                $this->phpef->settingsOption('refresh', 'radarrRefresh', ['value' => '60000'])
             ]
         ];
         return $SettingsArr;

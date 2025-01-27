@@ -55,7 +55,7 @@ trait General {
                 switch($Result->status_code) {
                     case 401:
                         $this->api->setAPIResponse('Error','API Key incorrect or expired');
-                        $this->logging->writeLog("MediaManager","Error. API Key incorrect or expired.","error");
+                        $this->logging->writeLog("MediaManager","Error. API Key incorrect or expired.","error",[$Url]);
                         return;
                     case 404:
                         $this->api->setAPIResponse('Error','HTTP 404 Not Found');
