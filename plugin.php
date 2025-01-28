@@ -14,6 +14,12 @@ $GLOBALS['plugins']['Media Manager'] = [
     'image' => 'logo.png',
     'settings' => true,
     'api' => '/api/plugin/mediamanager/settings',
+    'permissions' => [
+        [
+            'name' => 'ACL-MEDIAMANAGER',
+            'description' => 'Media Manager Pages'
+        ]
+    ]
 ];
 
 // Set Additional Content Security Policy Headers

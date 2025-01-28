@@ -504,7 +504,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                 queue += `
                 <tr>
                     <td class="max-texts">${v.filename}</td>
-                    <td class="hidden-xs sabnzbd-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs sabnzbd-${cleanString(v.status)}">${v.status}</td>
                     <td class="downloader mouse" data-bs-target="${v.nzo_id}" data-source="sabnzbd" data-action="${action}"><i class="fa fa-${actionIcon}"></i></td>
                     <td class="hidden-xs"><span class="label label-info">${v.cat}</span></td>
                     <td class="hidden-xs">${v.size}</td>
@@ -526,7 +526,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                 history += `
                 <tr>
                     <td class="max-texts">${v.name}</td>
-                    <td class="hidden-xs sabnzbd-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs sabnzbd-${cleanString(v.status)}">${v.status}</td>
                     <td class="hidden-xs"><span class="label label-info">${v.category}</span></td>
                     <td class="hidden-xs">${v.size}</td>
                     <td class="text-right">
@@ -564,7 +564,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                     queue += `
                     <tr>
                         <td class="max-texts">${v.NZBName}</td>
-                        <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
+                        <td class="hidden-xs nzbget-${cleanString(v.Status)}">${v.Status}</td>
                         <!--<td class="downloader mouse" data-bs-target="${v.NZBID}" data-source="sabnzbd" data-action="${action}"><i class="fa fa-${actionIcon}"></i></td>-->
                         <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
                         <td class="hidden-xs">${humanFileSize(size, true)}</td>
@@ -587,7 +587,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                     history += `
                     <tr>
                         <td class="max-texts">${v.NZBName}</td>
-                        <td class="hidden-xs nzbget-${cleanClass(v.Status)}">${v.Status}</td>
+                        <td class="hidden-xs nzbget-${cleanString(v.Status)}">${v.Status}</td>
                         <td class="hidden-xs"><span class="label label-info">${v.Category}</span></td>
                         <td class="hidden-xs">${humanFileSize(size, true)}</td>
                         <td class="text-right">
@@ -629,7 +629,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                 queue += `
                 <tr>
                     <td class="max-texts">${v.name}</td>
-                    <td class="hidden-xs transmission-${cleanClass(status)}">${status}</td>
+                    <td class="hidden-xs transmission-${cleanString(status)}">${status}</td>
                     <td class="hidden-xs">${v.downloadDir}</td>
                     <td class="hidden-xs">${humanFileSize(v.totalSize, true)}</td>
                     <td class="text-right">
@@ -666,7 +666,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                 queue += `
                 <tr>
                     <td class="max-texts"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${date}">${v.name}</span></td>
-                    <td class="hidden-xs rtorrent-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs rtorrent-${cleanString(v.status)}">${v.status}</td>
                     <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${downTotal}"><i class="fa fa-download"></i>&nbsp;${download}</span></td>
                     <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${upTotal}"><i class="fa fa-upload"></i>&nbsp;${upload}</span></td>
                     <td class="hidden-xs">${size}</td>
@@ -702,7 +702,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                 queue += `
                 <tr>
                     <td class="max-texts"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="">${v.Name}</span></td>
-                    <td class="hidden-xs utorrent-${cleanClass(v.Status)}">${v.Status}</td>
+                    <td class="hidden-xs utorrent-${cleanString(v.Status)}">${v.Status}</td>
                     <td class="hidden-xs"><span class="label label-info">${v.Labels}</span></td>
                     <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${download}"><i class="fa fa-download"></i>&nbsp;${download}</span></td>
                     <td class="hidden-xs"><span class="tooltip-info" data-bs-toggle="tooltip" data-placement="right" title="" data-original-title="${upload}"><i class="fa fa-upload"></i>&nbsp;${upload}</span></td>
@@ -742,7 +742,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                     <td class="">${v.name}</td>
                     <td class="">S${pad(v.episode.seasonNumber, 2)}E${pad(v.episode.episodeNumber, 2)}</td>
                     <td class="max-texts">${v.episode.title}</td>
-                    <td class="hidden-xs sonarr-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs sonarr-${cleanString(v.status)}">${v.status}</td>
                     <td class="hidden-xs">${size}</td>
                     <td class="hidden-xs"><span class="label label-info">${v.protocol}</span></td>
                     <td class="text-right">
@@ -778,7 +778,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                 queue += `
                 <tr>
                     <td class="max-texts">${v.name}</td>
-                    <td class="hidden-xs sonarr-${cleanClass(v.status)}">${v.status}</td>
+                    <td class="hidden-xs sonarr-${cleanString(v.status)}">${v.status}</td>
                     <td class="hidden-xs">${size}</td>
                     <td class="hidden-xs"><span class="label label-info">${v.protocol}</span></td>
                     <td class="text-right">
@@ -821,7 +821,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                 queue += `
                 <tr>
                     <td class="max-texts">${v.name}</td>
-                    <td class="hidden-xs qbit-${cleanClass(status)}">${status}</td>
+                    <td class="hidden-xs qbit-${cleanString(status)}">${status}</td>
                     <td class="hidden-xs">${v.save_path}</td>
                     <td class="hidden-xs">${size}</td>
                     <td class="text-right">
@@ -857,7 +857,7 @@ function buildDownloaderItem(array, source, type = 'none') {
                     queue += `<i class="fa fa-caret-down ml-2" style="cursor:pointer" onclick="$(this).toggleClass('fa-caret-down');$(this).toggleClass('fa-caret-up');$('#status-${v.hash}').toggleClass('d-none');" aria-hidden="true"></i><br /><div class="well mb-0 mt-2 p-3 d-none" id="status-${v.hash}">${v.tracker_status}</div>`;
                 }
                 queue += `</td>
-                    <td class="hidden-xs deluge-${cleanClass(v.state)}">${v.state}</td>
+                    <td class="hidden-xs deluge-${cleanString(v.state)}">${v.state}</td>
                     <td class="hidden-xs">${size}</td>
                     <td class="hidden-xs"><i class="fa fa-download"></i>&nbsp;${download}</td>
                     <td class="hidden-xs"><i class="fa fa-upload"></i>&nbsp;${upload}</td>
