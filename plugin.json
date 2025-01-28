@@ -8,8 +8,8 @@
     "icon": "https://raw.githubusercontent.com/php-ef/plugin-media-manager/main/logo.png",
     "contact": "https://github.com/php-ef/plugin-media-manager/issues",
     "link": "https://github.com/php-ef/plugin-media-manager",
-    "version": "1.2.0",
-    "minimum_php-ef_version": "0.8.0",
+    "version": "1.2.1",
+    "minimum_php-ef_version": "0.8.2",
     "release_date": "2024-12-31",
     "last_updated": "2025-01-02",
     "github_folder": ""
