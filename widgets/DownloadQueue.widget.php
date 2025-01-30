@@ -119,7 +119,7 @@ class DownloadQueueWidget implements WidgetInterface {
                 <div class="card card-rounded pt-3">
                     <div id="homepageOrderdownloader">
                         <script>
-                            appendScript({ src: "/api/page/plugin/Media Manager/js" })
+                            appendScript("/api/page/plugin/Media Manager/js")
                             .then(() => {
                                 $scripts
                             })
