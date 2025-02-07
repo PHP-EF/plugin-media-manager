@@ -173,6 +173,10 @@ trait Database {
                                         $Show['clean'] = true;
                                     }
                                 }
+
+                                if ($Show['statistics']['episodeFileCount'] <= $this->pluginConfig['sonarrCleanupEpisodesToKeep']) {
+                                    $Show['clean'] = false;
+                                }
                             } catch (Exception $e) {
                                 $this->logging->writeLog("MediaManager","Failed to update cleanup status for TV Shows.","error",$e);
                                 return array(
@@ -248,6 +252,11 @@ trait Database {
         } else {
             $this->logging->writeLog("MediaManager","Failed to retrieve a list of TV Shows.","error");
         }
+    }
+
+    public function updateTVShowCleanupState($id,$state) {
+        $stmt = $this->sql->prepare('UPDATE tvshows SET clean = :state WHERE id = :id');
+        return $stmt->execute([':id' => $id, ':state' => $state]);
     }
 
     // Function to get the TV Shows Table

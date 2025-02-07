@@ -511,6 +511,7 @@ trait Sonarr {
                     if ($this->updateSonarrTVShow($Series)) {
                         try {
                             $this->querySonarrAPI('DELETE','episodefile/bulk',['episodeFileIds' => array_values($episodeFileIdsToRemove)]);
+                            $this->updateTVShowCleanupState($Series['id'],false);
                             $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Successful: ' . $Series['title'], 'info', ['Episodes to remove' => $episodeFileIdsToRemove]);
                             $this->api->setAPIResponseMessage('Sonarr Cleanup Successful: ' . $Series['title']);
                         } catch (Exception $e) {
