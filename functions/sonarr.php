@@ -506,6 +506,7 @@ trait Sonarr {
                 if (!in_array((int)$this->pluginConfig['sonarrThrottlingTag'],$Series['tags'])) {
                     $Series['tags'][] = (int)$this->pluginConfig['sonarrThrottlingTag'];
                 }
+                $Series['monitored'] = false;
                 try {
                     if ($this->updateSonarrTVShow($Series)) {
                         try {
