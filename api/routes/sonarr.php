@@ -1,6 +1,6 @@
 <?php
 // ...
-$app->get('/mediamanager/sonarr/cleanup', function($request, $response, $args) {
+$app->post('/mediamanager/sonarr/cleanup', function($request, $response, $args) {
     $MediaManager = new MediaManager();
     if ($MediaManager->auth->checkAccess($MediaManager->config->get("Plugins", "Media Manager")['ACL-MEDIAMANAGER'] ?? "ACL-MEDIAMANAGER")) {
         $data = $MediaManager->api->getAPIRequestData($request);

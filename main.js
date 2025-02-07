@@ -882,3 +882,9 @@ function buildDownloaderItem(array, source, type = 'none') {
     }
     $(`#count-${source}`).html(count);
 }
+
+function tvActionFormatter(value, row, index) {
+  var buttons = [];
+  buttons.push(`<a class="cleanup" title="Cleanup Now"><i class="fa-solid fa-hand-sparkles"></i></a>&nbsp;`);
+  return buttons.join("");
+}

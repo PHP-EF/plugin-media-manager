@@ -25,7 +25,6 @@ trait Sonarr {
             $BuiltQuery = $this->buildArrAPIQuery($Params);
             $Url = $this->pluginConfig['sonarrUrl']."/api/".$this->pluginConfig['sonarrApiVersion']."/".$Uri;
             $Url = $Url.$BuiltQuery;
-
             return $this->getAPIResults($Method,$Url,$Data);
         }
     }
@@ -471,33 +470,86 @@ trait Sonarr {
 
     public function sonarrCleanup($ids = []) {
         if (!empty($ids)) {
-            // .. run manual cleanup on one or more shows
+            $this->logging->writeLog('MediaManager', 'Manual Sonarr Cleanup Initiated', 'info', ['Series IDs' => $ids]);
+            foreach ($ids as $showId) {
+                $this->cleanupEpisodes($showId);
+            }
         } else {
             if (!$this->pluginConfig['sonarrCleanupReportOnly']) {
                 $ShowsToClean = $this->getTVShowsTableByCleanupState(true);
-
-                // Remove TV Shows with excluded tag (This should already have been done as part of sync, but just to be safe)
-                $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'];
-                $ShowsToClean = array_filter($ShowsToClean, function($show) use ($exclusionTag) {
-                    $tags = explode(',', $show['tags']);
-                    return !in_array($exclusionTag, $tags);
-                });
-
-                // Filter shows with more episodes than threshold
-                $sonarrCleanupEpisodesToKeep = $this->pluginConfig['sonarrCleanupEpisodesToKeep'];
-                $ShowsToClean = array_filter($ShowsToClean, function($show) use ($sonarrCleanupEpisodesToKeep) {
-                    if ($show['episodeFileCount'] > $sonarrCleanupEpisodesToKeep) {
-                        return $show;
-                    }
-                });
-
-                // Do the cleanup..
-                // .. run either manually or automatically invoked cleanup on all shows marked for cleaning
-                return $ShowsToClean;
+                $ShowsToClean = $this->filterShows($ShowsToClean);
+                $this->logShowsToClean($ShowsToClean);
+                foreach ($ShowsToClean as $ShowToClean) {
+                    $this->cleanupEpisodes($ShowToClean['sonarrId']);
+                }
             } else {
                 $this->api->setAPIResponseMessage('Sonarr Cleanup Skipped, Report-Only Mode Enabled');
-                $this->logging->writeLog('MediaManager','Sonarr Cleanup Skipped, Report-Only Mode Enabled','info');
+                $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Skipped, Report-Only Mode Enabled', 'info');
             }
         }
+    }
+    
+    private function cleanupEpisodes($showId) {
+        $Series = $this->getSonarrTVShowById($showId);
+        $Episodes = $this->getSonarrEpisodesBySeriesId($showId);
+        $FilteredEpisodes = array_filter($Episodes, function($episode) {
+            return !is_null($episode['episodeFileId']) && $episode['episodeFileId'] != 0;
+        });
+        $SelectedEpisodesToKeep = array_slice($FilteredEpisodes, 0, $this->pluginConfig['sonarrCleanupEpisodesToKeep']);
+        $SelectedEpisodesToRemove = array_slice($FilteredEpisodes, $this->pluginConfig['sonarrCleanupEpisodesToKeep']);
+        $episodeFileIdsToRemove = array_map(function($episode) {
+            return $episode['episodeFileId'];
+        }, $SelectedEpisodesToRemove);
+        $this->logging->writeLog('MediaManager', 'Sonarr Cleanup: ' . $Series['title'], 'debug', ['Episodes to remove' => $episodeFileIdsToRemove, 'Series' => $Series]);
+        if ($SelectedEpisodesToRemove) {
+            try {
+                if (!in_array((int)$this->pluginConfig['sonarrThrottlingTag'],$Series['tags'])) {
+                    $Series['tags'][] = (int)$this->pluginConfig['sonarrThrottlingTag'];
+                }
+                try {
+                    if ($this->updateSonarrTVShow($Series)) {
+                        try {
+                            $this->querySonarrAPI('DELETE','episodefile/bulk',['episodeFileIds' => array_values($episodeFileIdsToRemove)]);
+                            $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Successful: ' . $Series['title'], 'info', ['Episodes to remove' => $episodeFileIdsToRemove]);
+                            $this->api->setAPIResponseMessage('Sonarr Cleanup Successful: ' . $Series['title']);
+                        } catch (Exception $e) {
+                            $this->logging->writeLog('MediaManager', 'Sonarr Cleanup: Failed to delete episodes from TV Show: ' . $Series['title'], 'warning', ['error' => $e->getMessage(), 'Episodes to remove' => $episodeFileIdsToRemove]);
+                        }
+                    } else {
+                        $this->logging->writeLog('MediaManager', 'Sonarr Cleanup: Failed to update TV Show: ' . $Series['title'], 'warning', ['Episodes to remove' => $episodeFileIdsToRemove]);
+                    }
+                } catch (Exception $e) {
+                    $this->logging->writeLog('MediaManager', 'Sonarr Cleanup: Failed to update TV Show: ' . $Series['title'], 'warning', ['error' => $e->getMessage(), 'Episodes to remove' => $episodeFileIdsToRemove]);
+                }
+            } catch (Exception $e) {
+                $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Failed: ' . $Series['title'], 'warning', ['error' => $e->getMessage(), 'Episodes to remove' => $episodeFileIdsToRemove]);
+            }
+        } else {
+            $this->logging->writeLog('MediaManager', 'Sonarr Cleanup: Nothing to Cleanup: ' . $Series['title'], 'debug', ['Episodes to remove' => 'None']);
+            $this->api->setAPIResponseMessage('Nothing to Cleanup: ' . $Series['title']);
+        }
+    }
+    
+    private function filterShows($ShowsToClean) {
+        $exclusionTag = $this->pluginConfig['sonarrCleanupExclusionTag'];
+        $ShowsToClean = array_filter($ShowsToClean, function($show) use ($exclusionTag) {
+            $tags = explode(',', $show['tags']);
+            return !in_array($exclusionTag, $tags);
+        });
+        $sonarrCleanupEpisodesToKeep = $this->pluginConfig['sonarrCleanupEpisodesToKeep'];
+        return array_filter($ShowsToClean, function($show) use ($sonarrCleanupEpisodesToKeep) {
+            return $show['episodeFileCount'] > $sonarrCleanupEpisodesToKeep;
+        });
+    }
+    
+    private function logShowsToClean($ShowsToClean) {
+        $LogShowsToClean = array_values(array_map(function($ShowToClean) {
+            return [
+                'title' => $ShowToClean['title'],
+                'type' => $ShowToClean['seriesType'],
+                'fileCount' => $ShowToClean['episodeFileCount']
+            ];
+        }, $ShowsToClean));
+        $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Initiated', 'info', $LogShowsToClean);
     }
 }

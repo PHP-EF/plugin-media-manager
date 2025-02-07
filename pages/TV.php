@@ -112,12 +112,33 @@ return '
                     <th data-field="library" data-sortable="true" data-filter-control="select">Library</th>
                     <th data-field="library_id" data-sortable="true" data-filter-control="select" data-visible="false">Library ID</th>
                     <th data-field="clean" data-sortable="true" data-filter-control="select" data-formatter="cleanupFormatter" >Cleanup</th>
+                    <th data-field="actions" data-sortable="true" data-filter-control="select" data-formatter="tvActionFormatter" data-events="tvActionEvents" >Actions</th>
                 </tr>
                 </thead>
             </table>
         </div>
     </div>
 <script>
+
+window.tvActionEvents = {
+    "click .cleanup": function (e, value, row, index) {
+        if(confirm("Are you sure you want to cleanup the TV Show: "+row.title+"? This is irriversible.") == true) {
+        queryAPI("POST","/api/mediamanager/sonarr/cleanup",{"ids": [row.sonarrId]}).done(function(data) {
+            if (data["result"] == "Success") {
+            toast("Success","",data["message"],"success");
+            $("#tvShowsTable").bootstrapTable("refresh");
+            } else if (data["result"] == "Error") {
+            toast(data["result"],"",data["message"],"danger","30000");
+            } else {
+            toast("Error","","Failed to cleanup "+row.title,"danger");
+            }
+        }).fail(function() {
+            toast("Error", "", "Failed to cleanup "+row.title, "danger");
+        });
+        }
+    }
+}
+
 // Initate TV Shows Table
 $("#tvShowsTable").bootstrapTable();
 </script>
