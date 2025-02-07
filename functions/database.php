@@ -255,8 +255,8 @@ trait Database {
     }
 
     public function updateTVShowCleanupState($id,$state) {
-        $stmt = $this->sql->prepare('UPDATE tvshows SET clean = :state WHERE id = :id');
-        return $stmt->execute([':id' => $id, ':state' => $state]);
+        $stmt = $this->sql->prepare('UPDATE tvshows SET clean = :state WHERE sonarrId = :sonarrId');
+        return $stmt->execute([':sonarrId' => $id, ':state' => $state]);
     }
 
     // Function to get the TV Shows Table

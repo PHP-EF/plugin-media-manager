@@ -527,6 +527,7 @@ trait Sonarr {
                 $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Failed: ' . $Series['title'], 'warning', ['error' => $e->getMessage(), 'Episodes to remove' => $episodeFileIdsToRemove]);
             }
         } else {
+            $this->updateTVShowCleanupState($Series['id'],false);
             $this->logging->writeLog('MediaManager', 'Sonarr Cleanup: Nothing to Cleanup: ' . $Series['title'], 'debug', ['Episodes to remove' => 'None']);
             $this->api->setAPIResponseMessage('Nothing to Cleanup: ' . $Series['title']);
         }
