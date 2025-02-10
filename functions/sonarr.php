@@ -484,7 +484,7 @@ trait Sonarr {
                 }
             } else {
                 $this->api->setAPIResponseMessage('Sonarr Cleanup Skipped, Report-Only Mode Enabled');
-                $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Skipped, Report-Only Mode Enabled', 'info');
+                $this->logging->writeLog('MediaManager', 'Sonarr Cleanup Skipped, Report-Only Mode Enabled', 'info', $ShowsToClean);
             }
         }
     }
