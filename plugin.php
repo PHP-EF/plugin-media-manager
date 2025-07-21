@@ -38,8 +38,8 @@ foreach (glob(__DIR__.'/widgets/*.php') as $widget) {
 }
 
 class MediaManager extends phpef {
-    use General,
-    Database,
+    use MediaManagerGeneral,
+    MediaManagerDatabase,
     PlexAuth,
     Tautulli,
     Sonarr,
@@ -66,9 +66,15 @@ class MediaManager extends phpef {
     }
 
     public function _pluginGetSettings() {
-        $SonarrTags = $this->getSonarrTags() ?: [];
-        $RadarrTags = $this->getRadarrTags() ?: [];
-        $PlexServers = $this->getPlexServers() ?: [];
+        try {
+            $SonarrTags = $this->getSonarrTags() ?: [];
+            $RadarrTags = $this->getRadarrTags() ?: [];
+            $PlexServers = $this->getPlexServers() ?: [];
+        } catch (Exception $e) {
+            $SonarrTags = [];
+            $RadarrTags = [];
+            $PlexServers = [];
+        }
         $AppendNone = array(
             [
                 "name" => 'None',
@@ -243,7 +249,7 @@ class MediaManager extends phpef {
                 $this->settingsOption('password', 'nzbgetPassword'),
             ),
             'Sabnzbd' => array(
-                $this->settingsOption('url', 'sabnzbdUrl', ['label' => 'NzbGet API URL', 'placeholder' => 'http://server:port']),
+                $this->settingsOption('url', 'sabnzbdUrl', ['label' => 'Sabnzbd API URL', 'placeholder' => 'http://server:port']),
                 $this->settingsOption('password', 'sabnzbdToken', ['label' => 'Sabnzbd Token', 'placeholder' => 'Your Sabnzbd Token']),
                 $this->settingsOption('test', '/api/mediamanager/sabnzbd/test', ['label' => 'Test Connection', 'text' => 'Test', 'Method' => 'GET'])
             ),

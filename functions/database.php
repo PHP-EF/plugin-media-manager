@@ -1,5 +1,5 @@
 <?php
-trait Database {
+trait MediaManagerDatabase {
         // **
     // DATABASE
     // **

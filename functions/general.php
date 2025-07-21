@@ -1,5 +1,5 @@
 <?php
-trait General {
+trait MediaManagerGeneral {
     // *Arr API Helper for building queries
     private function buildArrAPIQuery($Params = []) {
         $QueryParams = http_build_query($Params);
