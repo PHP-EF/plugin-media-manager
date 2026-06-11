@@ -27,10 +27,13 @@ trait SSO {
     private function initiateTautulliSSO($data) {
         $Url = $this->pluginConfig['tautulliUrl']."/auth/signin";
         $HeadersArr = array(
-            'Content-Type' => 'application/x-www-form-urlencoded'
+            'Content-Type' => 'application/x-www-form-urlencoded',
+            'X-Api-Key' => $this->pluginConfig['tautulliApiKey']
         );
         $data['remember_me'] = 1; // swap out to using remember me from PHP-EF when implemented
         $Results = $this->api->query->post($Url,$data,$HeadersArr);
+        error_log(print_r($Results, true));
+        error_log(print_r($data, true));
         if (isset($Results) && isset($Results['status']) && $Results['status'] == 'success') {
             if (isset($Results['token']) && isset($Results['uuid'])) {
                 $this->cookie('set','tautulli_token_'.$Results['uuid'], $Results['token'], 30);
